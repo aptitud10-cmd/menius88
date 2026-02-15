@@ -149,65 +149,130 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ─── Mockup / Visual ─── */}
+      {/* ─── Visual: Phone flow ─── */}
       <section className="relative pb-20 sm:pb-28">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="relative rounded-3xl bg-gradient-to-br from-gray-900 to-gray-800 p-4 sm:p-6 shadow-2xl">
-            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-brand-500/10 to-teal-500/10" />
-            {/* Browser chrome bar */}
-            <div className="relative flex items-center gap-2 mb-4 px-2">
-              <div className="flex gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-red-400/80" />
-                <div className="w-3 h-3 rounded-full bg-yellow-400/80" />
-                <div className="w-3 h-3 rounded-full bg-green-400/80" />
-              </div>
-              <div className="flex-1 mx-4">
-                <div className="bg-gray-700/50 rounded-lg px-4 py-1.5 text-xs text-gray-400 font-mono text-center">
-                  menius.vercel.app/r/mi-restaurante
-                </div>
-              </div>
-            </div>
-            {/* Dashboard preview */}
-            <div className="relative rounded-2xl bg-white overflow-hidden">
-              <div className="grid grid-cols-12 min-h-[340px] sm:min-h-[420px]">
-                {/* Sidebar */}
-                <div className="hidden sm:block col-span-3 bg-gray-50 border-r border-gray-100 p-4">
-                  <div className="text-sm font-bold mb-4" style={{ fontFamily: "'Sora', sans-serif" }}>
-                    <span className="text-brand-600">MEN</span>IUS
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10">
+
+            {/* Phone 1: Customer scans QR */}
+            <div className="relative">
+              <div className="w-[220px] sm:w-[250px] rounded-[2.5rem] bg-gray-900 p-2.5 shadow-2xl shadow-gray-900/30">
+                <div className="rounded-[2rem] bg-white overflow-hidden">
+                  {/* Status bar */}
+                  <div className="h-7 bg-gray-50 flex items-center justify-center">
+                    <div className="w-16 h-1.5 bg-gray-200 rounded-full" />
                   </div>
-                  <div className="space-y-1">
-                    {['Ordenes', 'Categorias', 'Productos', 'Mesas & QRs'].map((item, i) => (
-                      <div key={item} className={`px-3 py-2 rounded-lg text-xs font-medium ${i === 0 ? 'bg-brand-50 text-brand-700' : 'text-gray-500'}`}>
-                        {item}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                {/* Content */}
-                <div className="col-span-12 sm:col-span-9 p-4 sm:p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="text-base font-bold text-gray-900">Ordenes de hoy</div>
-                    <div className="px-3 py-1 rounded-full bg-brand-50 text-brand-700 text-xs font-semibold">3 nuevas</div>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {/* Menu content */}
+                  <div className="p-4 space-y-3">
+                    <div className="text-center mb-4">
+                      <div className="text-xs font-bold text-brand-600 mb-0.5">TAQUERIA EL FOGON</div>
+                      <div className="text-[10px] text-gray-400">Mesa 4</div>
+                    </div>
+                    {/* Category pill */}
+                    <div className="flex gap-1.5">
+                      <div className="px-2.5 py-1 rounded-full bg-brand-600 text-white text-[9px] font-semibold">Tacos</div>
+                      <div className="px-2.5 py-1 rounded-full bg-gray-100 text-gray-500 text-[9px] font-medium">Bebidas</div>
+                      <div className="px-2.5 py-1 rounded-full bg-gray-100 text-gray-500 text-[9px] font-medium">Postres</div>
+                    </div>
+                    {/* Items */}
                     {[
-                      { id: 'ORD-001', mesa: 'Mesa 4', status: 'Preparando', color: 'bg-violet-100 text-violet-700', items: '2x Tacos al pastor, 1x Agua' },
-                      { id: 'ORD-002', mesa: 'Mesa 7', status: 'Pendiente', color: 'bg-amber-100 text-amber-700', items: '1x Hamburguesa, 2x Refresco' },
-                      { id: 'ORD-003', mesa: 'Mesa 2', status: 'Lista', color: 'bg-emerald-100 text-emerald-700', items: '3x Pizza Margherita' },
-                    ].map((order) => (
-                      <div key={order.id} className="p-3 rounded-xl border border-gray-100 bg-gray-50/50">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-bold text-gray-700">{order.id}</span>
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${order.color}`}>{order.status}</span>
+                      { name: 'Al Pastor', price: '$45', tag: 'Popular' },
+                      { name: 'Suadero', price: '$40', tag: null },
+                      { name: 'Campechano', price: '$50', tag: 'Nuevo' },
+                    ].map((item) => (
+                      <div key={item.name} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-100 to-amber-50 flex items-center justify-center text-sm">
+                            🌮
+                          </div>
+                          <div>
+                            <div className="text-[11px] font-semibold text-gray-800">{item.name}</div>
+                            {item.tag && (
+                              <span className="text-[8px] font-semibold text-brand-600 bg-brand-50 px-1.5 py-0.5 rounded-full">{item.tag}</span>
+                            )}
+                          </div>
                         </div>
-                        <div className="text-[11px] text-gray-400 mb-1">{order.mesa}</div>
-                        <div className="text-xs text-gray-600">{order.items}</div>
+                        <div className="text-[11px] font-bold text-gray-700">{item.price}</div>
+                      </div>
+                    ))}
+                    {/* Cart button */}
+                    <div className="mt-2 bg-brand-600 text-white text-center py-2.5 rounded-xl text-[11px] font-bold shadow-lg shadow-brand-600/20">
+                      Ver carrito (3)
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {/* Label */}
+              <div className="text-center mt-5">
+                <div className="text-sm font-bold text-gray-800">Tu cliente</div>
+                <div className="text-xs text-gray-400">Escanea, elige y ordena</div>
+              </div>
+            </div>
+
+            {/* Arrow / connector */}
+            <div className="flex flex-col items-center gap-2 py-2 sm:py-0">
+              <div className="hidden sm:flex flex-col items-center gap-1">
+                <div className="text-[10px] font-bold text-brand-500 tracking-wider uppercase">Al instante</div>
+                <svg className="w-16 h-8 text-brand-400" fill="none" viewBox="0 0 64 32">
+                  <path d="M4 16h48m0 0l-8-8m8 8l-8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+              <div className="sm:hidden flex items-center gap-1">
+                <svg className="w-8 h-12 text-brand-400" fill="none" viewBox="0 0 32 48">
+                  <path d="M16 4v32m0 0l-8-8m8 8l8-8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <div className="text-[10px] font-bold text-brand-500 tracking-wider uppercase">Al instante</div>
+              </div>
+            </div>
+
+            {/* Phone 2: Owner sees order */}
+            <div className="relative">
+              <div className="w-[220px] sm:w-[250px] rounded-[2.5rem] bg-gray-900 p-2.5 shadow-2xl shadow-gray-900/30">
+                <div className="rounded-[2rem] bg-white overflow-hidden">
+                  {/* Status bar */}
+                  <div className="h-7 bg-gray-50 flex items-center justify-center">
+                    <div className="w-16 h-1.5 bg-gray-200 rounded-full" />
+                  </div>
+                  {/* Orders content */}
+                  <div className="p-4 space-y-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-xs font-bold text-gray-800">Ordenes</div>
+                      <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-brand-50">
+                        <span className="relative flex h-1.5 w-1.5">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75" />
+                          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-brand-500" />
+                        </span>
+                        <span className="text-[9px] font-bold text-brand-700">Nueva</span>
+                      </div>
+                    </div>
+                    {/* Order cards */}
+                    {[
+                      { id: '#001', mesa: 'Mesa 4', time: 'Ahora', status: 'Pendiente', statusColor: 'bg-amber-100 text-amber-700', items: '3x Tacos al pastor\n1x Agua mineral' },
+                      { id: '#002', mesa: 'Mesa 7', time: '3 min', status: 'Preparando', statusColor: 'bg-violet-100 text-violet-700', items: '1x Hamburguesa\n2x Limonada' },
+                      { id: '#003', mesa: 'Mesa 2', time: '8 min', status: 'Lista', statusColor: 'bg-emerald-100 text-emerald-700', items: '2x Pizza margh.' },
+                    ].map((order) => (
+                      <div key={order.id} className="p-2.5 rounded-xl border border-gray-100 bg-gray-50/60 space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-bold text-gray-700">{order.id}</span>
+                            <span className="text-[9px] text-gray-400">{order.mesa}</span>
+                          </div>
+                          <span className={`px-2 py-0.5 rounded-full text-[8px] font-bold ${order.statusColor}`}>{order.status}</span>
+                        </div>
+                        <div className="text-[10px] text-gray-500 whitespace-pre-line leading-relaxed">{order.items}</div>
+                        <div className="text-[9px] text-gray-300">{order.time}</div>
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
+              {/* Label */}
+              <div className="text-center mt-5">
+                <div className="text-sm font-bold text-gray-800">Tu dashboard</div>
+                <div className="text-xs text-gray-400">Gestiona todo en un lugar</div>
+              </div>
             </div>
+
           </div>
         </div>
       </section>
