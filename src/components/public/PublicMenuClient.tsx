@@ -658,12 +658,41 @@ function CartDrawer({ restaurant, tableName }: { restaurant: Restaurant; tableNa
   const [orderNotes, setOrderNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [orderResult, setOrderResult] = useState<{ order_number: string; order_id: string } | null>(null);
+  const [promoCode, setPromoCode] = useState('');
+  const [promoApplied, setPromoApplied] = useState<{ promotion_id: string; code: string; description: string; discount_amount: number; discount_type: string; discount_value: number } | null>(null);
+  const [promoError, setPromoError] = useState('');
+  const [promoLoading, setPromoLoading] = useState(false);
 
   const orderConfig = restaurant.order_config;
   const taxRate = orderConfig?.taxRate ?? 0;
   const subtotal = totalPrice();
-  const taxAmount = subtotal * (taxRate / 100);
-  const grandTotal = subtotal + taxAmount;
+  const discountAmount = promoApplied?.discount_amount ?? 0;
+  const afterDiscount = Math.max(0, subtotal - discountAmount);
+  const taxAmount = afterDiscount * (taxRate / 100);
+  const grandTotal = afterDiscount + taxAmount;
+
+  const handleApplyPromo = async () => {
+    if (!promoCode.trim()) return;
+    setPromoLoading(true);
+    setPromoError('');
+    try {
+      const res = await fetch('/api/orders/validate-promo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ restaurant_id: restaurant.id, code: promoCode, subtotal }),
+      });
+      const data = await res.json();
+      if (data.valid) {
+        setPromoApplied(data);
+      } else {
+        setPromoError(data.error || 'Código no válido');
+        setPromoApplied(null);
+      }
+    } catch {
+      setPromoError('Error al validar código');
+    }
+    setPromoLoading(false);
+  };
 
   const handleSendOrder = async () => {
     if (!customerName.trim()) return;
@@ -675,6 +704,9 @@ function CartDrawer({ restaurant, tableName }: { restaurant: Restaurant; tableNa
         customer_name: customerName,
         customer_phone: customerPhone || undefined,
         notes: orderNotes,
+        discount_code: promoApplied?.code || undefined,
+        promotion_id: promoApplied?.promotion_id || undefined,
+        discount_amount: discountAmount || undefined,
         items: items.map((item) => ({
           product_id: item.product.id,
           variant_id: item.variant?.id ?? null,
@@ -893,6 +925,40 @@ function CartDrawer({ restaurant, tableName }: { restaurant: Restaurant; tableNa
                 />
               </div>
 
+              {/* Promo code */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Código de descuento <span className="font-normal text-gray-400">(opcional)</span></label>
+                {promoApplied ? (
+                  <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-mono font-bold text-emerald-700">{promoApplied.code}</span>
+                      <span className="text-xs text-emerald-600">-{formatPrice(promoApplied.discount_amount)}</span>
+                    </div>
+                    <button onClick={() => { setPromoApplied(null); setPromoCode(''); }} className="text-xs text-emerald-600 hover:text-emerald-800 font-medium">
+                      Quitar
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={promoCode}
+                      onChange={(e) => { setPromoCode(e.target.value.toUpperCase()); setPromoError(''); }}
+                      placeholder="CÓDIGO"
+                      className="flex-1 px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-gray-900/10 transition-all"
+                    />
+                    <button
+                      onClick={handleApplyPromo}
+                      disabled={promoLoading || !promoCode.trim()}
+                      className="px-4 py-2.5 rounded-xl bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200 disabled:opacity-50 transition-colors"
+                    >
+                      {promoLoading ? '...' : 'Aplicar'}
+                    </button>
+                  </div>
+                )}
+                {promoError && <p className="text-xs text-red-500 mt-1">{promoError}</p>}
+              </div>
+
               {/* Order summary */}
               <div className="bg-gray-50 rounded-2xl p-4 space-y-2">
                 <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Resumen</h4>
@@ -907,6 +973,12 @@ function CartDrawer({ restaurant, tableName }: { restaurant: Restaurant; tableNa
                     <span className="text-gray-500">Subtotal</span>
                     <span>{formatPrice(subtotal)}</span>
                   </div>
+                  {promoApplied && (
+                    <div className="flex justify-between text-sm text-emerald-600">
+                      <span>Descuento ({promoApplied.code})</span>
+                      <span>-{formatPrice(discountAmount)}</span>
+                    </div>
+                  )}
                   {taxRate > 0 && (
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-500">Impuesto</span>

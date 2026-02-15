@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, ClipboardList, Tag, ShoppingBag, QrCode, Settings, LogOut, Menu, X, ExternalLink, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, ClipboardList, Tag, ShoppingBag, QrCode, Settings, LogOut, Menu, X, ExternalLink, BarChart3, Users, Percent } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { logout } from '@/lib/actions/auth';
@@ -14,6 +14,8 @@ const NAV_ITEMS = [
   { href: '/app/menu/products', label: 'Productos', icon: ShoppingBag },
   { href: '/app/tables', label: 'Mesas & QRs', icon: QrCode },
   { href: '/app/analytics', label: 'Analytics', icon: BarChart3 },
+  { href: '/app/staff', label: 'Equipo', icon: Users },
+  { href: '/app/promotions', label: 'Promociones', icon: Percent },
   { href: '/app/settings', label: 'Configuración', icon: Settings },
 ];
 
