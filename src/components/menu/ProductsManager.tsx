@@ -224,7 +224,36 @@ export function ProductsManager({ initialProducts, categories }: { initialProduc
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
-              <span className="text-xs text-gray-400 ml-auto">{filtered.length} productos</span>
+              <div className="ml-auto flex items-center gap-1.5">
+                <button
+                  onClick={() => window.open('/api/tenant/menu/export', '_blank')}
+                  className="px-3 py-2 rounded-xl border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                >
+                  ⬇ Exportar CSV
+                </button>
+                <label className="px-3 py-2 rounded-xl border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer">
+                  ⬆ Importar CSV
+                  <input type="file" accept=".csv" className="hidden" onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const text = await file.text();
+                    const res = await fetch('/api/tenant/menu/import', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ csvData: text }),
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                      alert(`Importado: ${data.categoriesCreated} categorías, ${data.productsCreated} productos. Recarga la página.`);
+                      window.location.reload();
+                    } else {
+                      alert(`Error: ${data.error}`);
+                    }
+                    e.target.value = '';
+                  }} />
+                </label>
+                <span className="text-xs text-gray-400">{filtered.length} productos</span>
+              </div>
             </div>
           )}
 

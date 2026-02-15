@@ -41,19 +41,27 @@ export async function GET() {
 }
 
 /**
- * PATCH /api/tenant/reviews - Toggle review visibility
+ * PATCH /api/tenant/reviews - Toggle visibility or add owner response
  */
 export async function PATCH(request: NextRequest) {
   try {
     const tenant = await getTenantContext();
     const supabase = createClient();
-    const { id, is_visible } = await request.json();
+    const body = await request.json();
+    const { id } = body;
 
     if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
 
+    const updateData: Record<string, any> = {};
+    if (body.is_visible !== undefined) updateData.is_visible = body.is_visible;
+    if (body.owner_response !== undefined) {
+      updateData.owner_response = body.owner_response;
+      updateData.responded_at = body.owner_response ? new Date().toISOString() : null;
+    }
+
     const { error } = await supabase
       .from('reviews')
-      .update({ is_visible })
+      .update(updateData)
       .eq('id', id)
       .eq('restaurant_id', tenant.restaurantId);
 

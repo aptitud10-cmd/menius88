@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import {
-  Star, Eye, EyeOff, Trash2, MessageSquare, TrendingUp, User,
+  Star, Eye, EyeOff, Trash2, MessageSquare, TrendingUp, User, Send, Reply,
 } from 'lucide-react';
 import { cn, timeAgo } from '@/lib/utils';
 
@@ -14,6 +14,8 @@ interface Review {
   is_visible: boolean;
   created_at: string;
   order_id: string | null;
+  owner_response: string | null;
+  responded_at: string | null;
 }
 
 interface Stats {
@@ -28,6 +30,8 @@ export function ReviewsDashboard() {
   const [stats, setStats] = useState<Stats>({ total: 0, visible: 0, average: 0, distribution: [0, 0, 0, 0, 0] });
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | '1' | '2' | '3' | '4' | '5'>('all');
+  const [replyingId, setReplyingId] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState('');
 
   const fetchReviews = async () => {
     try {
@@ -56,6 +60,39 @@ export function ReviewsDashboard() {
     if (!confirm('¿Eliminar esta reseña permanentemente?')) return;
     await fetch(`/api/tenant/reviews?id=${id}`, { method: 'DELETE' });
     setReviews(prev => prev.filter(r => r.id !== id));
+  };
+
+  const handleReply = async (reviewId: string) => {
+    if (!replyText.trim()) return;
+    await fetch('/api/tenant/reviews', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: reviewId, owner_response: replyText.trim() }),
+    });
+    setReviews(prev =>
+      prev.map(r =>
+        r.id === reviewId
+          ? { ...r, owner_response: replyText.trim(), responded_at: new Date().toISOString() }
+          : r
+      )
+    );
+    setReplyingId(null);
+    setReplyText('');
+  };
+
+  const handleDeleteReply = async (reviewId: string) => {
+    await fetch('/api/tenant/reviews', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: reviewId, owner_response: null }),
+    });
+    setReviews(prev =>
+      prev.map(r =>
+        r.id === reviewId
+          ? { ...r, owner_response: null, responded_at: null }
+          : r
+      )
+    );
   };
 
   const filtered = filter === 'all' ? reviews : reviews.filter(r => r.rating === parseInt(filter));
@@ -196,6 +233,63 @@ export function ReviewsDashboard() {
                   {review.comment && (
                     <p className="text-sm text-gray-600 leading-relaxed">{review.comment}</p>
                   )}
+
+                  {/* Owner Response */}
+                  {review.owner_response && (
+                    <div className="mt-2.5 pl-3 border-l-2 border-brand-200 bg-brand-50/50 rounded-r-lg py-2 pr-3">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <Reply className="w-3 h-3 text-brand-600" />
+                        <span className="text-[10px] font-semibold text-brand-700">Tu respuesta</span>
+                        {review.responded_at && (
+                          <span className="text-[10px] text-gray-400">{timeAgo(review.responded_at)}</span>
+                        )}
+                        <button
+                          onClick={() => handleDeleteReply(review.id)}
+                          className="ml-auto text-[10px] text-gray-400 hover:text-red-500 transition-colors"
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-700 leading-relaxed">{review.owner_response}</p>
+                    </div>
+                  )}
+
+                  {/* Reply form */}
+                  {replyingId === review.id ? (
+                    <div className="mt-2.5 flex gap-2">
+                      <input
+                        type="text"
+                        value={replyText}
+                        onChange={(e) => setReplyText(e.target.value)}
+                        placeholder="Escribe tu respuesta..."
+                        className="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-300"
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleReply(review.id); }}
+                        autoFocus
+                      />
+                      <button
+                        onClick={() => handleReply(review.id)}
+                        disabled={!replyText.trim()}
+                        className="px-3 py-2 rounded-lg bg-brand-600 text-white text-xs font-medium hover:bg-brand-700 disabled:opacity-50 transition-colors flex items-center gap-1"
+                      >
+                        <Send className="w-3 h-3" />
+                        Enviar
+                      </button>
+                      <button
+                        onClick={() => { setReplyingId(null); setReplyText(''); }}
+                        className="px-2 py-2 rounded-lg text-gray-400 hover:bg-gray-100 text-xs transition-colors"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  ) : !review.owner_response ? (
+                    <button
+                      onClick={() => { setReplyingId(review.id); setReplyText(''); }}
+                      className="mt-2 text-[11px] text-brand-600 hover:text-brand-700 font-medium flex items-center gap-1 transition-colors"
+                    >
+                      <MessageSquare className="w-3 h-3" />
+                      Responder
+                    </button>
+                  ) : null}
                 </div>
 
                 <div className="flex items-center gap-1 flex-shrink-0">
