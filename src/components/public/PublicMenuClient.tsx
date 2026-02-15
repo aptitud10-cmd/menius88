@@ -689,6 +689,11 @@ function CartDrawer({ restaurant, tableName }: { restaurant: Restaurant; tableNa
   const [promoLoading, setPromoLoading] = useState(false);
   const [orderType, setOrderType] = useState<'dine_in' | 'pickup' | 'delivery'>(tableName ? 'dine_in' : 'pickup');
   const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [isScheduled, setIsScheduled] = useState(false);
+  const [scheduledDate, setScheduledDate] = useState('');
+  const [scheduledTime, setScheduledTime] = useState('');
+  const [tipPercent, setTipPercent] = useState(0);
+  const [customTip, setCustomTip] = useState('');
 
   const orderConfig = restaurant.order_config;
   const taxRate = orderConfig?.taxRate ?? 0;
@@ -700,7 +705,8 @@ function CartDrawer({ restaurant, tableName }: { restaurant: Restaurant; tableNa
   const discountAmount = promoApplied?.discount_amount ?? 0;
   const afterDiscount = Math.max(0, subtotal - discountAmount);
   const taxAmount = afterDiscount * (taxRate / 100);
-  const grandTotal = afterDiscount + taxAmount + deliveryFee;
+  const tipAmount = customTip ? parseFloat(customTip) || 0 : (afterDiscount * tipPercent / 100);
+  const grandTotal = afterDiscount + taxAmount + deliveryFee + tipAmount;
 
   const handleApplyPromo = async () => {
     if (!promoCode.trim()) return;
@@ -731,6 +737,10 @@ function CartDrawer({ restaurant, tableName }: { restaurant: Restaurant; tableNa
     setSubmitting(true);
 
     try {
+      const scheduledFor = isScheduled && scheduledDate && scheduledTime
+        ? new Date(`${scheduledDate}T${scheduledTime}`).toISOString()
+        : undefined;
+
       const orderPayload = {
         restaurant_id: restaurant.id,
         customer_name: customerName,
@@ -741,6 +751,9 @@ function CartDrawer({ restaurant, tableName }: { restaurant: Restaurant; tableNa
         discount_code: promoApplied?.code || undefined,
         promotion_id: promoApplied?.promotion_id || undefined,
         discount_amount: discountAmount || undefined,
+        tip_amount: tipAmount > 0 ? tipAmount : undefined,
+        is_scheduled: isScheduled || undefined,
+        scheduled_for: scheduledFor,
         items: items.map((item) => ({
           product_id: item.product.id,
           variant_id: item.variant?.id ?? null,
@@ -1056,6 +1069,68 @@ function CartDrawer({ restaurant, tableName }: { restaurant: Restaurant; tableNa
                 {promoError && <p className="text-xs text-red-500 mt-1">{promoError}</p>}
               </div>
 
+              {/* Tip selector */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Propina <span className="font-normal text-gray-400">(opcional)</span></label>
+                <div className="flex gap-2">
+                  {[0, 10, 15, 20].map(pct => (
+                    <button
+                      key={pct}
+                      onClick={() => { setTipPercent(pct); setCustomTip(''); }}
+                      className={cn(
+                        'flex-1 py-2 rounded-xl text-sm font-medium transition-all border',
+                        tipPercent === pct && !customTip
+                          ? 'bg-gray-900 text-white border-gray-900'
+                          : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                      )}
+                    >
+                      {pct === 0 ? 'Sin' : `${pct}%`}
+                    </button>
+                  ))}
+                  <input
+                    type="number"
+                    value={customTip}
+                    onChange={(e) => { setCustomTip(e.target.value); setTipPercent(0); }}
+                    placeholder="$"
+                    min="0"
+                    className="w-20 px-3 py-2 rounded-xl border border-gray-200 text-sm text-center focus:outline-none focus:ring-2 focus:ring-gray-900/10"
+                  />
+                </div>
+              </div>
+
+              {/* Schedule order */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-semibold text-gray-700">Programar pedido</label>
+                  <button
+                    onClick={() => setIsScheduled(!isScheduled)}
+                    className={cn(
+                      'text-xs px-3 py-1 rounded-lg font-medium transition-colors',
+                      isScheduled ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                    )}
+                  >
+                    {isScheduled ? 'Programado' : 'Para ahora'}
+                  </button>
+                </div>
+                {isScheduled && (
+                  <div className="flex gap-2">
+                    <input
+                      type="date"
+                      value={scheduledDate}
+                      onChange={(e) => setScheduledDate(e.target.value)}
+                      min={new Date().toISOString().slice(0, 10)}
+                      className="flex-1 px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10"
+                    />
+                    <input
+                      type="time"
+                      value={scheduledTime}
+                      onChange={(e) => setScheduledTime(e.target.value)}
+                      className="w-28 px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10"
+                    />
+                  </div>
+                )}
+              </div>
+
               {/* Order summary */}
               <div className="bg-gray-50 rounded-2xl p-4 space-y-2">
                 <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Resumen</h4>
@@ -1086,6 +1161,12 @@ function CartDrawer({ restaurant, tableName }: { restaurant: Restaurant; tableNa
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-500">Impuesto</span>
                       <span>{formatPrice(taxAmount)}</span>
+                    </div>
+                  )}
+                  {tipAmount > 0 && (
+                    <div className="flex justify-between text-sm text-brand-600">
+                      <span>Propina</span>
+                      <span>{formatPrice(tipAmount)}</span>
                     </div>
                   )}
                   <div className="flex justify-between font-bold text-base pt-1">

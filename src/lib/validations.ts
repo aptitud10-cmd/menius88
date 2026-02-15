@@ -47,6 +47,9 @@ export const publicOrderSchema = z.object({
   discount_code: z.string().optional(),
   promotion_id: z.string().uuid().optional(),
   discount_amount: z.number().optional().default(0),
+  tip_amount: z.number().optional().default(0),
+  is_scheduled: z.boolean().optional().default(false),
+  scheduled_for: z.string().optional(),
   items: z.array(z.object({
     product_id: z.string().uuid(),
     variant_id: z.string().uuid().nullable(),

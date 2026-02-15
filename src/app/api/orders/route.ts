@@ -153,7 +153,8 @@ export async function POST(request: NextRequest) {
       deliveryFee = restConfig?.order_config?.deliveryFee ?? 0;
     }
 
-    const finalTotal = serverTotal - discountAmount + deliveryFee;
+    const tipAmount = parsed.data.tip_amount ?? 0;
+    const finalTotal = serverTotal - discountAmount + deliveryFee + tipAmount;
 
     // Create order
     const { data: order, error: orderError } = await supabase
@@ -171,6 +172,9 @@ export async function POST(request: NextRequest) {
         discount_code: parsed.data.discount_code || null,
         discount_amount: discountAmount,
         promotion_id: parsed.data.promotion_id || null,
+        tip_amount: tipAmount,
+        is_scheduled: parsed.data.is_scheduled || false,
+        scheduled_for: parsed.data.scheduled_for || null,
         subtotal: serverTotal,
         total: finalTotal,
         status: 'pending',

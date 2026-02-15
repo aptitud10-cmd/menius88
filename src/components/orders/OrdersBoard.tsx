@@ -267,6 +267,16 @@ function OrderCard({ order, status, isNew, onAdvance, onCancel, onSelect }: {
               {order.order_type === 'delivery' ? '🛵 Delivery' : '🥡 Llevar'}
             </span>
           )}
+          {(order as any).is_scheduled && (
+            <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700">
+              ⏰ Programado
+            </span>
+          )}
+          {(order as any).tip_amount > 0 && (
+            <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
+              💚 Propina
+            </span>
+          )}
         </div>
         <span className="text-xs text-gray-400">{timeAgo(order.created_at)}</span>
       </div>
