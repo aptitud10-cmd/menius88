@@ -136,7 +136,7 @@ export async function middleware(request: NextRequest) {
       .maybeSingle();
 
     if (profile?.default_restaurant_id) {
-      return NextResponse.redirect(new URL('/app/orders', request.url));
+      return NextResponse.redirect(new URL('/app', request.url));
     }
     return NextResponse.redirect(new URL('/onboarding/create-restaurant', request.url));
   }

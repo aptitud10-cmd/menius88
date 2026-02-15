@@ -60,7 +60,7 @@ export async function login(data: LoginInput) {
     .maybeSingle();
 
   if (profile?.default_restaurant_id) {
-    redirect('/app/orders');
+    redirect('/app');
   }
 
   // Maybe the user owns a restaurant but profile isn't linked — self-heal
@@ -80,7 +80,7 @@ export async function login(data: LoginInput) {
       },
       { onConflict: 'user_id' }
     );
-    redirect('/app/orders');
+    redirect('/app');
   }
 
   redirect('/onboarding/create-restaurant');
