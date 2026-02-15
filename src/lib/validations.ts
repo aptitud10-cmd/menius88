@@ -23,6 +23,10 @@ export const categorySchema = z.object({
   name: z.string().min(1, 'Nombre requerido'),
   sort_order: z.number().default(0),
   is_active: z.boolean().default(true),
+  available_from: z.string().nullable().optional(),
+  available_until: z.string().nullable().optional(),
+  available_days: z.array(z.string()).nullable().optional(),
+  schedule_label: z.string().nullable().optional(),
 });
 
 export const productSchema = z.object({

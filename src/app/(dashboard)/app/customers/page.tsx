@@ -1,8 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { AdvancedAnalytics } from '@/components/dashboard/AdvancedAnalytics';
+import { CustomersDashboard } from '@/components/dashboard/CustomersDashboard';
 
-export default async function AnalyticsPage() {
+export default async function CustomersPage() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
@@ -17,8 +17,8 @@ export default async function AnalyticsPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-bold mb-6">Analytics</h1>
-      <AdvancedAnalytics />
+      <h1 className="text-xl font-bold mb-6">Clientes</h1>
+      <CustomersDashboard />
     </div>
   );
 }

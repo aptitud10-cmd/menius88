@@ -87,9 +87,19 @@ export async function updateCategory(id: string, data: CategoryInput) {
       return { error: 'No tiene permisos para modificar esta categoría' };
     }
 
+    const updateData: Record<string, any> = {
+      name: data.name,
+      sort_order: data.sort_order,
+      is_active: data.is_active,
+    };
+    if (data.available_from !== undefined) updateData.available_from = data.available_from;
+    if (data.available_until !== undefined) updateData.available_until = data.available_until;
+    if (data.available_days !== undefined) updateData.available_days = data.available_days;
+    if (data.schedule_label !== undefined) updateData.schedule_label = data.schedule_label;
+
     const { error } = await supabase
       .from('categories')
-      .update({ name: data.name, sort_order: data.sort_order, is_active: data.is_active })
+      .update(updateData)
       .eq('id', id)
       .eq('restaurant_id', tenant.restaurantId); // Double-check with tenant filter
 

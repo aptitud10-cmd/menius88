@@ -96,18 +96,32 @@ export function PublicMenuClient({ restaurant, categories, products, tableName, 
     return () => observer.disconnect();
   }, []);
 
+  // Check if a category/product is available based on schedule
+  const isAvailableNow = (from?: string | null, until?: string | null, days?: string[] | null) => {
+    if (!from && !until && !days) return true;
+    const now = new Date();
+    const dayNames = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+    const currentDay = dayNames[now.getDay()];
+    if (days && days.length > 0 && !days.includes(currentDay)) return false;
+    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    if (from && currentTime < from) return false;
+    if (until && currentTime > until) return false;
+    return true;
+  };
+
   const filteredProducts = products.filter(p => {
-    // Exclude products with any selected allergen
     if (allergenFilters.length > 0 && p.allergens?.some(a => allergenFilters.includes(a))) return false;
-    // Include only products matching dietary filter
     if (dietaryFilters.length > 0 && !dietaryFilters.every(d => p.dietary_tags?.includes(d))) return false;
+    if (!isAvailableNow(p.available_from, p.available_until, p.available_days)) return false;
     return true;
   });
 
-  const itemsByCategory = categories.map((cat) => ({
-    category: cat,
-    items: filteredProducts.filter((p) => p.category_id === cat.id),
-  }));
+  const itemsByCategory = categories
+    .filter(cat => isAvailableNow(cat.available_from, cat.available_until, cat.available_days))
+    .map((cat) => ({
+      category: cat,
+      items: filteredProducts.filter((p) => p.category_id === cat.id),
+    }));
 
   const totalProducts = filteredProducts.length;
   const hasActiveFilters = allergenFilters.length > 0 || dietaryFilters.length > 0;

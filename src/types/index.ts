@@ -81,6 +81,11 @@ export interface Category {
   sort_order: number;
   is_active: boolean;
   created_at: string;
+  // Menu scheduling
+  available_from?: string | null;
+  available_until?: string | null;
+  available_days?: string[] | null;
+  schedule_label?: string | null;
 }
 
 export interface Product {
@@ -101,6 +106,10 @@ export interface Product {
   dietary_tags?: string[]; // vegetarian, vegan, gluten-free
   prep_time_minutes?: number;
   calories?: number;
+  // Menu scheduling
+  available_from?: string | null;
+  available_until?: string | null;
+  available_days?: string[] | null;
   // joined
   variants?: ProductVariant[];
   extras?: ProductExtra[];
