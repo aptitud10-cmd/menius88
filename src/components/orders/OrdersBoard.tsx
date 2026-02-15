@@ -259,6 +259,14 @@ function OrderCard({ order, status, isNew, onAdvance, onCancel, onSelect }: {
               Nueva
             </span>
           )}
+          {order.order_type && order.order_type !== 'dine_in' && (
+            <span className={cn(
+              'text-[9px] font-semibold px-1.5 py-0.5 rounded-full',
+              order.order_type === 'delivery' ? 'bg-blue-50 text-blue-700' : 'bg-violet-50 text-violet-700'
+            )}>
+              {order.order_type === 'delivery' ? '🛵 Delivery' : '🥡 Llevar'}
+            </span>
+          )}
         </div>
         <span className="text-xs text-gray-400">{timeAgo(order.created_at)}</span>
       </div>
@@ -396,17 +404,37 @@ function OrderDetailModal({ order, onClose, onStatusChange }: {
         <div className="p-5 space-y-5">
           {/* Customer info */}
           <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+            {order.order_type && (
+              <div className="flex items-center gap-2 text-sm">
+                <span className={cn(
+                  'text-[10px] font-bold px-2 py-0.5 rounded-full uppercase',
+                  order.order_type === 'delivery' ? 'bg-blue-100 text-blue-700' :
+                  order.order_type === 'pickup' ? 'bg-violet-100 text-violet-700' :
+                  'bg-gray-100 text-gray-600'
+                )}>
+                  {order.order_type === 'delivery' ? '🛵 Delivery' :
+                   order.order_type === 'pickup' ? '🥡 Para llevar' :
+                   '🍽️ Comer aquí'}
+                </span>
+              </div>
+            )}
             {order.customer_name && (
               <div className="flex items-center gap-2 text-sm">
                 <User className="w-4 h-4 text-gray-400" />
                 <span className="font-medium text-gray-700">{order.customer_name}</span>
               </div>
             )}
-            {(order as any).customer_phone && (
-              <a href={`tel:${(order as any).customer_phone}`} className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900">
+            {order.customer_phone && (
+              <a href={`tel:${order.customer_phone}`} className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900">
                 <Phone className="w-4 h-4 text-gray-400" />
-                {(order as any).customer_phone}
+                {order.customer_phone}
               </a>
+            )}
+            {order.delivery_address && (
+              <div className="flex items-start gap-2 text-sm">
+                <span className="text-blue-500 mt-0.5 flex-shrink-0">📍</span>
+                <p className="text-gray-600">{order.delivery_address}</p>
+              </div>
             )}
             {order.notes && (
               <div className="flex items-start gap-2 text-sm">

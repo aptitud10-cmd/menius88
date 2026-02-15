@@ -39,7 +39,14 @@ export const tableSchema = z.object({
 
 export const publicOrderSchema = z.object({
   customer_name: z.string().min(1, 'Nombre requerido'),
+  customer_phone: z.string().optional().default(''),
   notes: z.string().default(''),
+  order_type: z.enum(['dine_in', 'pickup', 'delivery']).default('dine_in'),
+  table_id: z.string().uuid().optional().nullable(),
+  delivery_address: z.string().optional().default(''),
+  discount_code: z.string().optional(),
+  promotion_id: z.string().uuid().optional(),
+  discount_amount: z.number().optional().default(0),
   items: z.array(z.object({
     product_id: z.string().uuid(),
     variant_id: z.string().uuid().nullable(),

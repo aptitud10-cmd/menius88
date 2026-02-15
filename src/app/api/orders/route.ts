@@ -123,6 +123,38 @@ export async function POST(request: NextRequest) {
       serverTotal += item.line_total;
     }
 
+    // Handle discount: increment promo usage if a promo was used
+    let discountAmount = 0;
+    if (parsed.data.promotion_id && parsed.data.discount_amount) {
+      discountAmount = parsed.data.discount_amount;
+      // Increment usage count directly
+      const { data: promo } = await supabase
+        .from('promotions')
+        .select('current_uses')
+        .eq('id', parsed.data.promotion_id)
+        .single();
+      if (promo) {
+        await supabase
+          .from('promotions')
+          .update({ current_uses: (promo.current_uses || 0) + 1 })
+          .eq('id', parsed.data.promotion_id);
+      }
+    }
+
+    // Calculate delivery fee if applicable
+    const orderType = parsed.data.order_type ?? 'dine_in';
+    let deliveryFee = 0;
+    if (orderType === 'delivery') {
+      const { data: restConfig } = await supabase
+        .from('restaurants')
+        .select('order_config')
+        .eq('id', restaurant_id)
+        .single();
+      deliveryFee = restConfig?.order_config?.deliveryFee ?? 0;
+    }
+
+    const finalTotal = serverTotal - discountAmount + deliveryFee;
+
     // Create order
     const { data: order, error: orderError } = await supabase
       .from('orders')
@@ -130,8 +162,17 @@ export async function POST(request: NextRequest) {
         restaurant_id: restaurant_id,
         order_number: orderNum,
         customer_name: parsed.data.customer_name,
+        customer_phone: parsed.data.customer_phone || null,
         notes: parsed.data.notes,
-        total: serverTotal,
+        order_type: orderType,
+        table_id: parsed.data.table_id || null,
+        delivery_address: parsed.data.delivery_address || null,
+        delivery_fee: deliveryFee,
+        discount_code: parsed.data.discount_code || null,
+        discount_amount: discountAmount,
+        promotion_id: parsed.data.promotion_id || null,
+        subtotal: serverTotal,
+        total: finalTotal,
         status: 'pending',
       })
       .select()

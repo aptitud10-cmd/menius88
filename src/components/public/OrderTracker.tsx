@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import {
   Clock, CheckCircle, ChefHat, Package, Truck,
-  XCircle, ArrowLeft, Phone, RefreshCw,
+  XCircle, ArrowLeft, Phone, RefreshCw, Star, Send,
 } from 'lucide-react';
 import { formatPrice, cn, timeAgo } from '@/lib/utils';
 import type { OrderStatus } from '@/types';
@@ -238,6 +238,15 @@ export function OrderTracker({ restaurant, order: initialOrder }: OrderTrackerPr
           </div>
         </div>
 
+        {/* Review section - shown when delivered */}
+        {isComplete && (
+          <ReviewSection
+            restaurantId={restaurant.id}
+            orderId={order.id}
+            customerName={order.customer_name}
+          />
+        )}
+
         {/* Contact */}
         {restaurant.phone && (
           <div className="text-center">
@@ -256,6 +265,121 @@ export function OrderTracker({ restaurant, order: initialOrder }: OrderTrackerPr
       <style jsx global>{`
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
       `}</style>
+    </div>
+  );
+}
+
+// =========================================================
+// Review Section
+// =========================================================
+function ReviewSection({ restaurantId, orderId, customerName }: {
+  restaurantId: string;
+  orderId: string;
+  customerName: string;
+}) {
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [comment, setComment] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async () => {
+    if (rating === 0) { setError('Selecciona una calificación'); return; }
+    setSubmitting(true);
+    setError('');
+
+    try {
+      const res = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          restaurant_id: restaurantId,
+          order_id: orderId,
+          customer_name: customerName,
+          rating,
+          comment,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setSubmitted(true);
+    } catch (err: any) {
+      setError(err.message);
+    }
+    setSubmitting(false);
+  };
+
+  if (submitted) {
+    return (
+      <div className="bg-emerald-50 rounded-2xl border border-emerald-200 p-6 text-center">
+        <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-3">
+          <CheckCircle className="w-6 h-6 text-emerald-600" />
+        </div>
+        <p className="font-semibold text-emerald-800">¡Gracias por tu reseña!</p>
+        <p className="text-sm text-emerald-600 mt-1">Tu opinión nos ayuda a mejorar</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-4">
+      <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+        <Star className="w-4 h-4 text-amber-500" />
+        ¿Cómo estuvo tu experiencia?
+      </h3>
+
+      {error && <p className="text-xs text-red-500">{error}</p>}
+
+      {/* Star rating */}
+      <div className="flex items-center gap-1.5 justify-center py-2">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            onClick={() => setRating(star)}
+            onMouseEnter={() => setHoverRating(star)}
+            onMouseLeave={() => setHoverRating(0)}
+            className="p-1 transition-transform hover:scale-110"
+          >
+            <Star
+              className={cn(
+                'w-8 h-8 transition-colors',
+                (hoverRating || rating) >= star
+                  ? 'fill-amber-400 text-amber-400'
+                  : 'text-gray-200'
+              )}
+            />
+          </button>
+        ))}
+      </div>
+
+      {rating > 0 && (
+        <p className="text-center text-sm text-gray-500">
+          {rating === 5 ? '¡Excelente! 🎉' :
+           rating === 4 ? '¡Muy bien! 👍' :
+           rating === 3 ? 'Regular 😊' :
+           rating === 2 ? 'Podría mejorar 😐' :
+           'Mala experiencia 😔'}
+        </p>
+      )}
+
+      {/* Comment */}
+      <textarea
+        value={comment}
+        onChange={(e) => setComment(e.target.value)}
+        placeholder="Cuéntanos más sobre tu experiencia... (opcional)"
+        rows={2}
+        className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-300 resize-none transition-all"
+      />
+
+      <button
+        onClick={handleSubmit}
+        disabled={submitting || rating === 0}
+        className="w-full py-3 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-600 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+      >
+        <Send className="w-4 h-4" />
+        {submitting ? 'Enviando...' : 'Enviar reseña'}
+      </button>
     </div>
   );
 }
