@@ -16,6 +16,8 @@ interface PublicMenuClientProps {
   categories: Category[];
   products: Product[];
   tableName: string | null;
+  currentLanguage?: string;
+  supportedLanguages?: string[];
 }
 
 // ---- Dietary tag icons ----
@@ -39,7 +41,11 @@ function isOpenNow(hours?: DaySchedule[]): { open: boolean; until?: string } {
   return { open: false };
 }
 
-export function PublicMenuClient({ restaurant, categories, products, tableName }: PublicMenuClientProps) {
+const LANG_FLAGS: Record<string, string> = {
+  es: '🇲🇽', en: '🇺🇸', fr: '🇫🇷', de: '🇩🇪', pt: '🇧🇷', it: '🇮🇹', ja: '🇯🇵', zh: '🇨🇳', ko: '🇰🇷',
+};
+
+export function PublicMenuClient({ restaurant, categories, products, tableName, currentLanguage = 'es', supportedLanguages = ['es'] }: PublicMenuClientProps) {
   const [activeCategory, setActiveCategory] = useState(categories[0]?.id ?? '');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showInfo, setShowInfo] = useState(false);
@@ -179,10 +185,29 @@ export function PublicMenuClient({ restaurant, categories, products, tableName }
         hasCover ? 'top-0' : 'top-0'
       )}>
         <div className="max-w-2xl mx-auto flex items-center gap-2">
+          {/* Language selector */}
+          {supportedLanguages.length > 1 && (
+            <div className="flex-shrink-0 ml-2">
+              <select
+                value={currentLanguage}
+                onChange={(e) => {
+                  const url = new URL(window.location.href);
+                  url.searchParams.set('lang', e.target.value);
+                  window.location.href = url.toString();
+                }}
+                className="text-xs bg-gray-100 border-0 rounded-lg px-2 py-1.5 text-gray-600 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              >
+                {supportedLanguages.map(l => (
+                  <option key={l} value={l}>{LANG_FLAGS[l] ?? '🌐'} {l.toUpperCase()}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {/* Cart button in nav */}
           <button
             onClick={() => setOpen(true)}
-            className="flex-shrink-0 relative p-2.5 ml-2"
+            className="flex-shrink-0 relative p-2.5 ml-1"
           >
             <ShoppingBag className="w-5 h-5 text-gray-600" />
             {totalItems() > 0 && (

@@ -5,7 +5,7 @@ import { PublicMenuClient } from '@/components/public/PublicMenuClient';
 
 interface PageProps {
   params: { slug: string };
-  searchParams: { table?: string };
+  searchParams: { table?: string; lang?: string };
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -59,19 +59,53 @@ export default async function PublicMenuPage({ params, searchParams }: PageProps
       .order('sort_order'),
   ]);
 
-  // Map joined fields to expected shape
+  // Fetch translations if a non-default language is requested
+  const requestedLang = searchParams.lang ?? restaurant.default_language ?? 'es';
+  const supportedLangs: string[] = restaurant.supported_languages ?? ['es'];
+  const needsTranslation = requestedLang !== (restaurant.default_language ?? 'es') && supportedLangs.includes(requestedLang);
+
+  let productTransMap: Record<string, { name: string; description: string }> = {};
+  let categoryTransMap: Record<string, { name: string }> = {};
+
+  if (needsTranslation) {
+    const productIds = (products ?? []).map(p => p.id);
+    const categoryIds = (categories ?? []).map(c => c.id);
+
+    const [{ data: pTrans }, { data: cTrans }] = await Promise.all([
+      productIds.length > 0
+        ? supabase.from('product_translations').select('*').in('product_id', productIds).eq('language', requestedLang)
+        : { data: [] },
+      categoryIds.length > 0
+        ? supabase.from('category_translations').select('*').in('category_id', categoryIds).eq('language', requestedLang)
+        : { data: [] },
+    ]);
+
+    (pTrans ?? []).forEach((t: any) => { productTransMap[t.product_id] = { name: t.name, description: t.description ?? '' }; });
+    (cTrans ?? []).forEach((t: any) => { categoryTransMap[t.category_id] = { name: t.name }; });
+  }
+
+  // Map joined fields + apply translations
   const mappedProducts = (products ?? []).map(p => ({
     ...p,
+    name: productTransMap[p.id]?.name || p.name,
+    description: productTransMap[p.id]?.description || p.description,
     variants: p.product_variants ?? [],
     extras: p.product_extras ?? [],
+  }));
+
+  const mappedCategories = (categories ?? []).map(c => ({
+    ...c,
+    name: categoryTransMap[c.id]?.name || c.name,
   }));
 
   return (
     <PublicMenuClient
       restaurant={restaurant}
-      categories={categories ?? []}
+      categories={mappedCategories}
       products={mappedProducts}
       tableName={searchParams.table ?? null}
+      currentLanguage={requestedLang}
+      supportedLanguages={supportedLangs}
     />
   );
 }
