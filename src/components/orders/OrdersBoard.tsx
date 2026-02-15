@@ -5,7 +5,7 @@ import Image from 'next/image';
 import {
   Clock, ChefHat, CheckCircle, Package, XCircle, User, ArrowRight,
   Bell, BellOff, Volume2, VolumeX, RefreshCw, History, LayoutGrid,
-  X, Phone, FileText, Printer, ChevronRight,
+  X, Phone, FileText, Printer, ChevronRight, Download,
 } from 'lucide-react';
 import { updateOrderStatus } from '@/lib/actions/restaurant';
 import { formatPrice, timeAgo, ORDER_STATUS_CONFIG, cn } from '@/lib/utils';
@@ -492,10 +492,29 @@ function OrderDetailModal({ order, onClose, onStatusChange }: {
 // =========================================================
 function OrderHistory({ orders, onSelect }: { orders: Order[]; onSelect: (o: Order) => void }) {
   const [filter, setFilter] = useState<'all' | 'delivered' | 'cancelled'>('all');
+  const [exporting, setExporting] = useState(false);
 
   const filtered = filter === 'all'
     ? orders
     : orders.filter(o => o.status === filter);
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const params = new URLSearchParams();
+      if (filter !== 'all') params.set('status', filter);
+      const res = await fetch(`/api/tenant/orders/export?${params.toString()}`);
+      if (!res.ok) throw new Error('Export failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ordenes-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch { /* silent */ }
+    setExporting(false);
+  };
 
   return (
     <div>
@@ -513,7 +532,17 @@ function OrderHistory({ orders, onSelect }: { orders: Order[]; onSelect: (o: Ord
             {f === 'all' ? 'Todas' : f === 'delivered' ? 'Entregadas' : 'Canceladas'}
           </button>
         ))}
-        <span className="text-xs text-gray-400 ml-auto">{filtered.length} órdenes</span>
+        <div className="ml-auto flex items-center gap-2">
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-600 text-xs font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
+          >
+            <Download className="w-3.5 h-3.5" />
+            {exporting ? 'Exportando...' : 'Exportar CSV'}
+          </button>
+          <span className="text-xs text-gray-400">{filtered.length} órdenes</span>
+        </div>
       </div>
 
       {filtered.length === 0 ? (
