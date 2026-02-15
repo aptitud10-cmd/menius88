@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: '/app/menu/categories', label: 'Categorías', icon: Tag },
   { href: '/app/menu/products', label: 'Productos', icon: ShoppingBag },
   { href: '/app/tables', label: 'Mesas & QRs', icon: QrCode },
+  { href: '/app/settings', label: 'Configuración', icon: Settings },
 ];
 
 interface DashboardNavProps {

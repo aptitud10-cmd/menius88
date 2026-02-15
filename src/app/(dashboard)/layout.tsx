@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { DashboardNav } from '@/components/dashboard/DashboardNav';
+import { TrialBanner } from '@/components/dashboard/TrialBanner';
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = createClient();
@@ -19,7 +20,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const { data: restaurant } = await supabase
     .from('restaurants')
-    .select('name, slug')
+    .select('name, slug, subscription_plan, trial_ends_at')
     .eq('id', profile.default_restaurant_id)
     .single();
 
@@ -50,6 +51,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </header>
 
         <main className="flex-1 p-4 md:p-6 max-w-5xl w-full mx-auto">
+          <TrialBanner
+            trialEndsAt={restaurant?.trial_ends_at ?? null}
+            plan={restaurant?.subscription_plan ?? 'trial'}
+          />
           {children}
         </main>
       </div>

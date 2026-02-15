@@ -55,8 +55,15 @@ export async function PATCH(request: NextRequest) {
     const supabase = createClient();
     const body = await request.json();
 
-    // Only allow updating specific fields
-    const allowedFields = ['name', 'timezone', 'currency', 'logo_url'];
+    // Only allow updating specific fields (whitelist approach for security)
+    const allowedFields = [
+      'name', 'timezone', 'currency', 'logo_url',
+      // Branding & details
+      'tagline', 'description', 'cover_image_url', 'cuisine_type',
+      'address', 'phone', 'email', 'website',
+      // Configuration (JSONB)
+      'theme', 'operating_hours', 'order_config',
+    ];
     const updateData: Record<string, unknown> = {};
     
     for (const field of allowedFields) {
