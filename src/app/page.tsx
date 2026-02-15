@@ -34,6 +34,18 @@ const ArrowRight = ({ className = 'w-4 h-4' }: { className?: string }) => (
 
 /* ─── Data ─── */
 
+const IconClock = () => (
+  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.2} stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
+const IconPhone = () => (
+  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.2} stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
+  </svg>
+);
+
 const FEATURES = [
   {
     icon: <IconQR />,
@@ -46,14 +58,24 @@ const FEATURES = [
     desc: 'Las ordenes llegan al instante a tu panel. Confirma, prepara y entrega con un flujo visual tipo kanban.',
   },
   {
+    icon: <IconPhone />,
+    title: 'Seguimiento de pedidos',
+    desc: 'Tu cliente ve en tiempo real el estado de su pedido. Sin preguntar, sin esperas innecesarias.',
+  },
+  {
     icon: <IconShield />,
     title: 'Tu marca, tu control',
     desc: 'URL personalizada, tu nombre, tus precios. Sin logos de terceros. Sin comisiones por venta.',
   },
   {
     icon: <IconChart />,
-    title: 'Panel completo',
-    desc: 'Categorias, productos, variantes, extras, mesas y ordenes. Todo desde un dashboard pensado para ti.',
+    title: 'Analytics integrado',
+    desc: 'Ventas por dia, productos mas vendidos, horas pico. Datos claros para tomar mejores decisiones.',
+  },
+  {
+    icon: <IconClock />,
+    title: 'Configuracion completa',
+    desc: 'Horarios, tipos de pedido, impuestos, variantes, extras, etiquetas dieteticas. Todo personalizable.',
   },
 ];
 
@@ -171,7 +193,7 @@ export default function LandingPage() {
           </div>
 
           {/* Feature cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {FEATURES.map((f, i) => (
               <div
                 key={f.title}

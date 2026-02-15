@@ -15,16 +15,26 @@ export default async function TablesPage() {
 
   if (!profile?.default_restaurant_id) redirect('/onboarding/create-restaurant');
 
-  const { data: tables } = await supabase
-    .from('tables')
-    .select('*')
-    .eq('restaurant_id', profile.default_restaurant_id)
-    .order('created_at');
+  const [{ data: tables }, { data: restaurant }] = await Promise.all([
+    supabase
+      .from('tables')
+      .select('*')
+      .eq('restaurant_id', profile.default_restaurant_id)
+      .order('created_at'),
+    supabase
+      .from('restaurants')
+      .select('slug')
+      .eq('id', profile.default_restaurant_id)
+      .single(),
+  ]);
 
   return (
     <div>
       <h1 className="text-xl font-bold mb-6">Mesas & Códigos QR</h1>
-      <TablesManager initialTables={tables ?? []} />
+      <TablesManager
+        initialTables={tables ?? []}
+        restaurantSlug={restaurant?.slug}
+      />
     </div>
   );
 }

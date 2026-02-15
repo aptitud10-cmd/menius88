@@ -222,6 +222,80 @@ export async function deleteProduct(id: string) {
 }
 
 // ============================================================
+// PRODUCT VARIANTS & EXTRAS — Inline management
+// ============================================================
+
+export async function saveProductVariants(
+  productId: string,
+  variants: { id?: string; name: string; price_delta: number; sort_order: number }[]
+) {
+  try {
+    const tenant = await getTenantContext();
+    const supabase = createClient();
+
+    const isOwned = await validateResourceOwnership('products', productId, tenant.restaurantId);
+    if (!isOwned) return { error: 'No tiene permisos sobre este producto' };
+
+    // Delete existing variants
+    await supabase.from('product_variants').delete().eq('product_id', productId);
+
+    // Insert new variants
+    if (variants.length > 0) {
+      const { error } = await supabase.from('product_variants').insert(
+        variants.map((v, i) => ({
+          product_id: productId,
+          name: v.name,
+          price_delta: v.price_delta,
+          sort_order: v.sort_order ?? i,
+        }))
+      );
+      if (error) return { error: error.message };
+    }
+
+    revalidatePath('/app/menu/products');
+    return { success: true };
+  } catch (e) {
+    if (e instanceof TenantError) return { error: e.message };
+    throw e;
+  }
+}
+
+export async function saveProductExtras(
+  productId: string,
+  extras: { id?: string; name: string; price: number; sort_order: number }[]
+) {
+  try {
+    const tenant = await getTenantContext();
+    const supabase = createClient();
+
+    const isOwned = await validateResourceOwnership('products', productId, tenant.restaurantId);
+    if (!isOwned) return { error: 'No tiene permisos sobre este producto' };
+
+    // Delete existing extras
+    await supabase.from('product_extras').delete().eq('product_id', productId);
+
+    // Insert new extras
+    if (extras.length > 0) {
+      const { error } = await supabase.from('product_extras').insert(
+        extras.map((e, i) => ({
+          product_id: productId,
+          name: e.name,
+          price: e.price,
+          sort_order: e.sort_order ?? i,
+        }))
+      );
+      if (error) return { error: error.message };
+    }
+
+    revalidatePath('/app/menu/products');
+    return { success: true };
+  } catch (e) {
+    if (e instanceof TenantError) return { error: e.message };
+    throw e;
+  }
+}
+
+// ============================================================
 // TABLE CRUD — ALL operations validate tenant ownership
 // ============================================================
 

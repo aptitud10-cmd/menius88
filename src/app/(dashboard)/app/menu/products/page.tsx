@@ -18,14 +18,30 @@ export default async function ProductsPage() {
   const rid = profile.default_restaurant_id;
 
   const [{ data: products }, { data: categories }] = await Promise.all([
-    supabase.from('products').select('*').eq('restaurant_id', rid).order('sort_order'),
-    supabase.from('categories').select('*').eq('restaurant_id', rid).eq('is_active', true).order('sort_order'),
+    supabase
+      .from('products')
+      .select('*, product_variants(*), product_extras(*)')
+      .eq('restaurant_id', rid)
+      .order('sort_order'),
+    supabase
+      .from('categories')
+      .select('*')
+      .eq('restaurant_id', rid)
+      .eq('is_active', true)
+      .order('sort_order'),
   ]);
+
+  // Map joined fields
+  const mappedProducts = (products ?? []).map(p => ({
+    ...p,
+    variants: p.product_variants ?? [],
+    extras: p.product_extras ?? [],
+  }));
 
   return (
     <div>
       <h1 className="text-xl font-bold mb-6">Productos</h1>
-      <ProductsManager initialProducts={products ?? []} categories={categories ?? []} />
+      <ProductsManager initialProducts={mappedProducts} categories={categories ?? []} />
     </div>
   );
 }
