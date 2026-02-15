@@ -134,7 +134,7 @@ export default function LandingPage() {
               <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
             <Link
-              href="/r/demo"
+              href="/r/tacos-mexicanos"
               className="w-full sm:w-auto px-8 py-4 rounded-2xl border border-white/10 text-white/70 font-medium text-base hover:bg-white/[0.03] hover:border-white/15 hover:text-white/90 transition-all flex items-center justify-center gap-2.5"
             >
               Ver demo en vivo
