@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, ClipboardList, Tag, ShoppingBag, QrCode, Settings, LogOut, Menu, X, ExternalLink, BarChart3, Users, Percent, Star, CreditCard, ChefHat, Globe, Boxes, Palette, Heart, CalendarDays, Truck, UserCheck } from 'lucide-react';
+import { LayoutDashboard, ClipboardList, Tag, ShoppingBag, QrCode, Settings, LogOut, Menu, X, ExternalLink, BarChart3, Users, Percent, Star, CreditCard, ChefHat, Globe, Boxes, Palette, Heart, CalendarDays, Truck, UserCheck, ListOrdered, Receipt } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { logout } from '@/lib/actions/auth';
@@ -22,6 +22,8 @@ const NAV_ITEMS = [
   { href: '/app/translations', label: 'Idiomas', icon: Globe },
   { href: '/app/customers', label: 'Clientes', icon: UserCheck },
   { href: '/app/reservations', label: 'Reservaciones', icon: CalendarDays },
+  { href: '/app/waitlist', label: 'Lista Espera', icon: ListOrdered },
+  { href: '/app/expenses', label: 'Gastos', icon: Receipt },
   { href: '/app/delivery-zones', label: 'Zonas Delivery', icon: Truck },
   { href: '/app/theme', label: 'Tema', icon: Palette },
   { href: '/app/loyalty', label: 'Lealtad', icon: Heart },
