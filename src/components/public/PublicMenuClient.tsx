@@ -49,6 +49,9 @@ export function PublicMenuClient({ restaurant, categories, products, tableName, 
   const [activeCategory, setActiveCategory] = useState(categories[0]?.id ?? '');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showInfo, setShowInfo] = useState(false);
+  const [allergenFilters, setAllergenFilters] = useState<string[]>([]);
+  const [dietaryFilters, setDietaryFilters] = useState<string[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const catBarRef = useRef<HTMLDivElement>(null);
 
@@ -91,12 +94,21 @@ export function PublicMenuClient({ restaurant, categories, products, tableName, 
     return () => observer.disconnect();
   }, []);
 
+  const filteredProducts = products.filter(p => {
+    // Exclude products with any selected allergen
+    if (allergenFilters.length > 0 && p.allergens?.some(a => allergenFilters.includes(a))) return false;
+    // Include only products matching dietary filter
+    if (dietaryFilters.length > 0 && !dietaryFilters.every(d => p.dietary_tags?.includes(d))) return false;
+    return true;
+  });
+
   const itemsByCategory = categories.map((cat) => ({
     category: cat,
-    items: products.filter((p) => p.category_id === cat.id),
+    items: filteredProducts.filter((p) => p.category_id === cat.id),
   }));
 
-  const totalProducts = products.length;
+  const totalProducts = filteredProducts.length;
+  const hasActiveFilters = allergenFilters.length > 0 || dietaryFilters.length > 0;
 
   return (
     <div className="min-h-screen bg-gray-50 pb-32">
@@ -204,10 +216,28 @@ export function PublicMenuClient({ restaurant, categories, products, tableName, 
             </div>
           )}
 
+          {/* Filter button */}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={cn(
+              'flex-shrink-0 relative p-2.5 ml-1 rounded-lg transition-colors',
+              hasActiveFilters ? 'bg-brand-50 text-brand-600' : 'text-gray-600'
+            )}
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+            </svg>
+            {hasActiveFilters && (
+              <span className="absolute -top-0 -right-0 w-4 h-4 flex items-center justify-center rounded-full bg-brand-600 text-white text-[8px] font-bold">
+                {allergenFilters.length + dietaryFilters.length}
+              </span>
+            )}
+          </button>
+
           {/* Cart button in nav */}
           <button
             onClick={() => setOpen(true)}
-            className="flex-shrink-0 relative p-2.5 ml-1"
+            className="flex-shrink-0 relative p-2.5"
           >
             <ShoppingBag className="w-5 h-5 text-gray-600" />
             {totalItems() > 0 && (
@@ -240,6 +270,80 @@ export function PublicMenuClient({ restaurant, categories, products, tableName, 
           </div>
         </div>
       </div>
+
+      {/* ===== Allergen/Dietary Filters ===== */}
+      {showFilters && (
+        <div className="bg-white border-b border-gray-100 shadow-sm animate-[slideDown_0.2s_ease-out]">
+          <div className="max-w-2xl mx-auto px-4 py-3 space-y-3">
+            <div>
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Filtros dietéticos</p>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { id: 'vegetarian', label: '🥬 Vegetariano' },
+                  { id: 'vegan', label: '🌱 Vegano' },
+                  { id: 'gluten-free', label: '🌾 Sin Gluten' },
+                ].map(tag => (
+                  <button
+                    key={tag.id}
+                    onClick={() => setDietaryFilters(prev =>
+                      prev.includes(tag.id) ? prev.filter(f => f !== tag.id) : [...prev, tag.id]
+                    )}
+                    className={cn(
+                      'text-xs px-3 py-1.5 rounded-full font-medium transition-all border',
+                      dietaryFilters.includes(tag.id)
+                        ? 'bg-emerald-600 text-white border-emerald-600'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                    )}
+                  >
+                    {tag.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Excluir alérgenos</p>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { id: 'gluten', label: 'Gluten' },
+                  { id: 'lactose', label: 'Lácteos' },
+                  { id: 'nuts', label: 'Frutos secos' },
+                  { id: 'shellfish', label: 'Mariscos' },
+                  { id: 'eggs', label: 'Huevo' },
+                  { id: 'soy', label: 'Soja' },
+                  { id: 'fish', label: 'Pescado' },
+                  { id: 'peanuts', label: 'Cacahuate' },
+                ].map(a => (
+                  <button
+                    key={a.id}
+                    onClick={() => setAllergenFilters(prev =>
+                      prev.includes(a.id) ? prev.filter(f => f !== a.id) : [...prev, a.id]
+                    )}
+                    className={cn(
+                      'text-xs px-3 py-1.5 rounded-full font-medium transition-all border',
+                      allergenFilters.includes(a.id)
+                        ? 'bg-red-600 text-white border-red-600'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                    )}
+                  >
+                    {a.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {hasActiveFilters && (
+              <div className="flex items-center justify-between pt-1">
+                <p className="text-xs text-gray-500">{totalProducts} productos encontrados</p>
+                <button
+                  onClick={() => { setAllergenFilters([]); setDietaryFilters([]); }}
+                  className="text-xs text-brand-600 font-medium hover:text-brand-700"
+                >
+                  Limpiar filtros
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ===== Menu Items ===== */}
       <div className="max-w-2xl mx-auto px-4 pt-4">
