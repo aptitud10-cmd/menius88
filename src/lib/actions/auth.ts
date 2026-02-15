@@ -17,17 +17,23 @@ export async function signup(data: SignupInput) {
 
   if (error) return { error: error.message };
 
-  // If email confirmation is required, Supabase returns a user but no session
+  // If Supabase returned a user but NO session, email confirmation is required.
   if (authData?.user && !authData.session) {
-    // User created but needs email confirmation — try auto sign-in
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: data.email,
-      password: data.password,
-    });
+    return {
+      error: 'Te enviamos un email de confirmación. Revisa tu bandeja de entrada.',
+    };
+  }
 
-    if (signInError) {
-      return { error: 'Cuenta creada. Confirma tu email o intenta iniciar sesión.' };
-    }
+  // Session exists → user is authenticated. Ensure profile exists.
+  if (authData?.user) {
+    await supabase.from('profiles').upsert(
+      {
+        user_id: authData.user.id,
+        full_name: data.full_name,
+        role: 'owner',
+      },
+      { onConflict: 'user_id' }
+    );
   }
 
   redirect('/onboarding/create-restaurant');
@@ -36,26 +42,47 @@ export async function signup(data: SignupInput) {
 export async function login(data: LoginInput) {
   const supabase = createClient();
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data: authData, error } = await supabase.auth.signInWithPassword({
     email: data.email,
     password: data.password,
   });
 
   if (error) return { error: error.message };
 
-  // Check if user has a restaurant
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = authData.user;
   if (!user) return { error: 'Error de autenticación' };
 
+  // Check if user already has a restaurant
   const { data: profile } = await supabase
     .from('profiles')
     .select('default_restaurant_id')
     .eq('user_id', user.id)
-    .single();
+    .maybeSingle();
 
   if (profile?.default_restaurant_id) {
     redirect('/app/orders');
   }
+
+  // Maybe the user owns a restaurant but profile isn't linked — self-heal
+  const { data: ownedRestaurant } = await supabase
+    .from('restaurants')
+    .select('id')
+    .eq('owner_user_id', user.id)
+    .limit(1)
+    .maybeSingle();
+
+  if (ownedRestaurant?.id) {
+    await supabase.from('profiles').upsert(
+      {
+        user_id: user.id,
+        default_restaurant_id: ownedRestaurant.id,
+        full_name: (user.user_metadata?.full_name as string) ?? '',
+      },
+      { onConflict: 'user_id' }
+    );
+    redirect('/app/orders');
+  }
+
   redirect('/onboarding/create-restaurant');
 }
 

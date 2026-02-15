@@ -26,29 +26,24 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  const { data: { session } } = await supabase.auth.getSession();
+  // Refresh the session — this is the main purpose of the middleware.
+  // Using getUser() instead of getSession() as recommended by Supabase.
+  const { data: { user } } = await supabase.auth.getUser();
   const path = request.nextUrl.pathname;
 
-  // Protected routes: /app/*, /onboarding/*
   const isProtected = path.startsWith('/app') || path.startsWith('/onboarding');
   const isAuthPage = path === '/login' || path === '/signup';
 
-  if (isProtected && !session) {
-    return NextResponse.redirect(new URL('/login', request.url));
+  // Not logged in → block protected routes
+  if (isProtected && !user) {
+    const loginUrl = new URL('/login', request.url);
+    return NextResponse.redirect(loginUrl);
   }
 
-  if (isAuthPage && session) {
-    // Check if user has a restaurant
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('default_restaurant_id')
-      .eq('user_id', session.user.id)
-      .single();
-
-    if (profile?.default_restaurant_id) {
-      return NextResponse.redirect(new URL('/app/orders', request.url));
-    }
-    return NextResponse.redirect(new URL('/onboarding/create-restaurant', request.url));
+  // Logged in → skip auth pages (no DB queries here, keep middleware fast)
+  if (isAuthPage && user) {
+    const dashboardUrl = new URL('/app/orders', request.url);
+    return NextResponse.redirect(dashboardUrl);
   }
 
   return response;

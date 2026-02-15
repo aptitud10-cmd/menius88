@@ -16,14 +16,15 @@ export function createClient() {
           try {
             cookieStore.set({ name, value, ...options });
           } catch {
-            // Server component — ignore
+            // Called from a Server Component — safe to ignore.
+            // Cookies can only be modified in a Server Action or Route Handler.
           }
         },
         remove(name: string, options: CookieOptions) {
           try {
             cookieStore.set({ name, value: '', ...options });
           } catch {
-            // Server component — ignore
+            // Called from a Server Component — safe to ignore.
           }
         },
       },

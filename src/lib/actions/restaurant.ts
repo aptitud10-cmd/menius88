@@ -12,11 +12,13 @@ export async function createRestaurant(data: CreateRestaurantInput) {
   if (!user) return { error: 'No autenticado' };
 
   // Check slug is unique
-  const { data: existing } = await supabase
+  const { data: existing, error: existingError } = await supabase
     .from('restaurants')
     .select('id')
     .eq('slug', data.slug)
-    .single();
+    .maybeSingle();
+
+  if (existingError) return { error: existingError.message };
 
   if (existing) return { error: 'Ese slug ya está en uso' };
 
@@ -34,11 +36,20 @@ export async function createRestaurant(data: CreateRestaurantInput) {
 
   if (error) return { error: error.message };
 
-  // Update profile with default restaurant
-  await supabase
+  // Ensure profile exists and is linked to the new restaurant.
+  const { error: profileError } = await supabase
     .from('profiles')
-    .update({ default_restaurant_id: restaurant.id })
-    .eq('user_id', user.id);
+    .upsert(
+      {
+        user_id: user.id,
+        default_restaurant_id: restaurant.id,
+        full_name: (user.user_metadata?.full_name as string) ?? '',
+        role: 'owner',
+      },
+      { onConflict: 'user_id' }
+    );
+
+  if (profileError) return { error: profileError.message };
 
   redirect('/app/orders');
 }

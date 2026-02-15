@@ -1,73 +1,323 @@
 import Link from 'next/link';
 
+const FEATURES = [
+  {
+    icon: (
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
+      </svg>
+    ),
+    title: 'Tu restaurante, tu marca',
+    desc: 'Espacio propio con tu nombre, logo y URL personalizada. Cero marcas ajenas.',
+  },
+  {
+    icon: (
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5z" />
+      </svg>
+    ),
+    title: 'QR por cada mesa',
+    desc: 'Un escaneo y tu cliente ya tiene el menú completo en su celular. Cero apps.',
+  },
+  {
+    icon: (
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 18a3.75 3.75 0 00.495-7.468 5.99 5.99 0 00-1.925 3.547 5.975 5.975 0 01-2.133-1.001A3.75 3.75 0 0012 18z" />
+      </svg>
+    ),
+    title: 'Pedidos en tiempo real',
+    desc: 'Cada orden aparece al instante en tu panel. Confirma, prepara y entrega sin fricciones.',
+  },
+  {
+    icon: (
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+      </svg>
+    ),
+    title: 'Cero comisiones',
+    desc: 'Sin porcentaje por venta. Tarifa plana o gratis. Tus ganancias son tuyas.',
+  },
+];
+
+const STEPS = [
+  { num: '01', title: 'Regístrate', desc: 'Crea tu cuenta en 10 segundos. Solo nombre, email y contraseña.' },
+  { num: '02', title: 'Arma tu menú', desc: 'Agrega categorías, productos con fotos, precios, variantes y extras.' },
+  { num: '03', title: 'Genera tus QRs', desc: 'Crea mesas y descarga los QRs. Imprímelos y ponlos en las mesas.' },
+  { num: '04', title: 'Recibe pedidos', desc: 'Tus clientes escanean, ordenan y tú ves todo en tu dashboard.' },
+];
+
 export default function LandingPage() {
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Nav */}
-      <header className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
+    <div className="min-h-screen flex flex-col bg-white overflow-hidden">
+      {/* ─── Nav ─── */}
+      <header className="fixed top-0 w-full z-50 bg-white/70 backdrop-blur-xl border-b border-gray-100/60">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <span className="text-xl font-bold tracking-tight" style={{ fontFamily: "'Sora', sans-serif" }}>
+          <Link href="/" className="text-xl font-bold tracking-tight" style={{ fontFamily: "'Sora', sans-serif" }}>
             <span className="text-brand-600">MEN</span>IUS
-          </span>
-          <div className="flex items-center gap-4">
-            <Link href="/login" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
-              Iniciar sesión
+          </Link>
+          <div className="flex items-center gap-3">
+            <Link href="/login" className="hidden sm:inline-flex text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors px-4 py-2">
+              Entrar
             </Link>
-            <Link href="/signup" className="text-sm font-semibold px-5 py-2 rounded-xl bg-brand-600 text-white hover:bg-brand-700 transition-colors">
-              Registrarse gratis
+            <Link href="/signup" className="text-sm font-semibold px-5 py-2.5 rounded-full bg-gray-900 text-white hover:bg-gray-800 transition-all hover:shadow-lg">
+              Empezar gratis
             </Link>
           </div>
         </div>
       </header>
 
-      {/* Hero */}
-      <main className="flex-1 flex items-center justify-center pt-16">
-        <div className="max-w-3xl mx-auto px-6 py-24 text-center">
-          <div className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 rounded-full bg-brand-50 text-brand-700 text-sm font-medium border border-brand-200">
-            <span className="w-2 h-2 rounded-full bg-brand-500 animate-pulse" />
-            Plataforma SaaS para restaurantes
+      {/* ─── Hero ─── */}
+      <section className="relative pt-32 pb-20 sm:pt-40 sm:pb-32">
+        {/* Background decorative elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-gradient-to-br from-brand-200/40 to-teal-200/30 blur-3xl animate-float" />
+          <div className="absolute -bottom-20 -left-40 w-[400px] h-[400px] rounded-full bg-gradient-to-tr from-brand-100/30 to-emerald-100/20 blur-3xl animate-float-delayed" />
+        </div>
+
+        <div className="relative max-w-4xl mx-auto px-6 text-center">
+          {/* Badge */}
+          <div className="animate-fade-in-up animate-fade-in-up-1 inline-flex items-center gap-2 mb-8 px-4 py-2 rounded-full bg-brand-50 text-brand-700 text-sm font-medium border border-brand-200/60 shadow-sm">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-500" />
+            </span>
+            Usado por restaurantes en LATAM
           </div>
 
-          <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight leading-[1.06] mb-6" style={{ fontFamily: "'Sora', sans-serif" }}>
-            Tu menú digital,{' '}
-            <span className="bg-gradient-to-r from-brand-500 to-teal-400 bg-clip-text text-transparent">
-              pedidos al instante
+          {/* Headline */}
+          <h1
+            className="animate-fade-in-up animate-fade-in-up-2 text-[2.75rem] sm:text-6xl md:text-7xl font-extrabold tracking-tight leading-[1.08] mb-7"
+            style={{ fontFamily: "'Sora', sans-serif" }}
+          >
+            El menú que tus clientes{' '}
+            <span className="relative inline-block">
+              <span className="bg-gradient-to-r from-brand-500 via-teal-400 to-brand-600 bg-clip-text text-transparent animate-gradient">
+                piden con un escaneo
+              </span>
+              <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 200 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M1 5.5C40 2 80 1 100 3C120 5 160 6.5 199 3" stroke="url(#underline-grad)" strokeWidth="2.5" strokeLinecap="round" />
+                <defs><linearGradient id="underline-grad" x1="0" y1="0" x2="200" y2="0"><stop stopColor="#05c8a7" /><stop offset="1" stopColor="#2dd4bf" /></linearGradient></defs>
+              </svg>
             </span>
           </h1>
 
-          <p className="text-lg sm:text-xl text-gray-500 max-w-xl mx-auto mb-10 leading-relaxed">
-            Registra tu restaurante, crea tu menú, genera QRs para tus mesas y recibe pedidos desde el teléfono de tus clientes. Sin comisiones.
+          {/* Subheadline */}
+          <p className="animate-fade-in-up animate-fade-in-up-3 text-lg sm:text-xl text-gray-500 max-w-2xl mx-auto mb-12 leading-relaxed">
+            Digitaliza tu restaurante en minutos. Menú con QR, pedidos en vivo, cero comisiones.
+            <span className="text-gray-700 font-medium"> Tus clientes ordenan desde su celular, tú gestionas todo desde un solo lugar.</span>
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/signup" className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-brand-600 text-white font-semibold text-base shadow-lg shadow-brand-600/25 hover:shadow-xl hover:bg-brand-700 hover:-translate-y-0.5 transition-all">
-              Crear cuenta gratis
+          {/* CTA */}
+          <div className="animate-fade-in-up animate-fade-in-up-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link
+              href="/signup"
+              className="group w-full sm:w-auto px-8 py-4 rounded-2xl bg-brand-600 text-white font-semibold text-base shadow-xl shadow-brand-600/20 hover:shadow-2xl hover:shadow-brand-600/30 hover:bg-brand-700 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
+            >
+              Crear mi menú gratis
+              <svg className="w-4 h-4 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+              </svg>
             </Link>
-            <Link href="/r/demo" className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-white border border-gray-200 text-gray-700 font-semibold text-base hover:bg-gray-50 transition-all">
-              Ver menú demo
+            <Link
+              href="/r/demo"
+              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gray-50 border border-gray-200 text-gray-700 font-semibold text-base hover:bg-white hover:border-gray-300 hover:shadow-md transition-all flex items-center justify-center gap-2"
+            >
+              <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+              </svg>
+              Ver demo en vivo
             </Link>
           </div>
 
-          {/* Features */}
-          <div className="mt-24 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5 text-left">
-            {[
-              { icon: '🏪', title: 'Multi-restaurante', desc: 'Cada restaurante tiene su propio espacio, menú y dashboard.' },
-              { icon: '📱', title: 'QR por mesa', desc: 'Genera códigos QR únicos para cada mesa de tu restaurante.' },
-              { icon: '🛒', title: 'Pedidos en vivo', desc: 'Tus clientes ordenan desde su teléfono. Tú ves los pedidos al instante.' },
-              { icon: '🎛️', title: 'Dashboard completo', desc: 'Gestiona categorías, productos, variantes, extras y órdenes.' },
-            ].map((f) => (
-              <div key={f.title} className="p-5 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                <span className="text-2xl mb-2 block">{f.icon}</span>
-                <h3 className="font-semibold text-sm mb-1">{f.title}</h3>
-                <p className="text-xs text-gray-500 leading-relaxed">{f.desc}</p>
+          {/* Social proof */}
+          <div className="mt-12 flex items-center justify-center gap-6 text-sm text-gray-400">
+            <div className="flex items-center gap-1.5">
+              <svg className="w-4 h-4 text-brand-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" /></svg>
+              Setup en 5 min
+            </div>
+            <div className="flex items-center gap-1.5">
+              <svg className="w-4 h-4 text-brand-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" /></svg>
+              Sin tarjeta de crédito
+            </div>
+            <div className="hidden sm:flex items-center gap-1.5">
+              <svg className="w-4 h-4 text-brand-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" /></svg>
+              Cancela cuando quieras
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Mockup / Visual ─── */}
+      <section className="relative pb-20 sm:pb-28">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="relative rounded-3xl bg-gradient-to-br from-gray-900 to-gray-800 p-4 sm:p-6 shadow-2xl">
+            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-brand-500/10 to-teal-500/10" />
+            {/* Browser chrome bar */}
+            <div className="relative flex items-center gap-2 mb-4 px-2">
+              <div className="flex gap-1.5">
+                <div className="w-3 h-3 rounded-full bg-red-400/80" />
+                <div className="w-3 h-3 rounded-full bg-yellow-400/80" />
+                <div className="w-3 h-3 rounded-full bg-green-400/80" />
+              </div>
+              <div className="flex-1 mx-4">
+                <div className="bg-gray-700/50 rounded-lg px-4 py-1.5 text-xs text-gray-400 font-mono text-center">
+                  menius.vercel.app/r/mi-restaurante
+                </div>
+              </div>
+            </div>
+            {/* Dashboard preview */}
+            <div className="relative rounded-2xl bg-white overflow-hidden">
+              <div className="grid grid-cols-12 min-h-[340px] sm:min-h-[420px]">
+                {/* Sidebar */}
+                <div className="hidden sm:block col-span-3 bg-gray-50 border-r border-gray-100 p-4">
+                  <div className="text-sm font-bold mb-4" style={{ fontFamily: "'Sora', sans-serif" }}>
+                    <span className="text-brand-600">MEN</span>IUS
+                  </div>
+                  <div className="space-y-1">
+                    {['Ordenes', 'Categorias', 'Productos', 'Mesas & QRs'].map((item, i) => (
+                      <div key={item} className={`px-3 py-2 rounded-lg text-xs font-medium ${i === 0 ? 'bg-brand-50 text-brand-700' : 'text-gray-500'}`}>
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* Content */}
+                <div className="col-span-12 sm:col-span-9 p-4 sm:p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="text-base font-bold text-gray-900">Ordenes de hoy</div>
+                    <div className="px-3 py-1 rounded-full bg-brand-50 text-brand-700 text-xs font-semibold">3 nuevas</div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {[
+                      { id: 'ORD-001', mesa: 'Mesa 4', status: 'Preparando', color: 'bg-violet-100 text-violet-700', items: '2x Tacos al pastor, 1x Agua' },
+                      { id: 'ORD-002', mesa: 'Mesa 7', status: 'Pendiente', color: 'bg-amber-100 text-amber-700', items: '1x Hamburguesa, 2x Refresco' },
+                      { id: 'ORD-003', mesa: 'Mesa 2', status: 'Lista', color: 'bg-emerald-100 text-emerald-700', items: '3x Pizza Margherita' },
+                    ].map((order) => (
+                      <div key={order.id} className="p-3 rounded-xl border border-gray-100 bg-gray-50/50">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-bold text-gray-700">{order.id}</span>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${order.color}`}>{order.status}</span>
+                        </div>
+                        <div className="text-[11px] text-gray-400 mb-1">{order.mesa}</div>
+                        <div className="text-xs text-gray-600">{order.items}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Features ─── */}
+      <section className="py-20 sm:py-28 bg-gray-50">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-4" style={{ fontFamily: "'Sora', sans-serif" }}>
+              Todo lo que necesitas, <span className="text-brand-600">nada que sobre</span>
+            </h2>
+            <p className="text-gray-500 text-lg max-w-xl mx-auto">
+              Sin curva de aprendizaje. Si puedes usar WhatsApp, puedes usar MENIUS.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {FEATURES.map((f) => (
+              <div
+                key={f.title}
+                className="group relative p-6 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-xl hover:border-brand-200/60 hover:-translate-y-1 transition-all duration-300"
+              >
+                <div className="w-12 h-12 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center mb-4 group-hover:bg-brand-100 transition-colors">
+                  {f.icon}
+                </div>
+                <h3 className="font-bold text-base mb-2 text-gray-900">{f.title}</h3>
+                <p className="text-sm text-gray-500 leading-relaxed">{f.desc}</p>
               </div>
             ))}
           </div>
         </div>
-      </main>
+      </section>
 
-      <footer className="border-t border-gray-100 py-8 text-center text-sm text-gray-400">
-        &copy; {new Date().getFullYear()} MENIUS. Todos los derechos reservados.
+      {/* ─── How it works ─── */}
+      <section className="py-20 sm:py-28">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-4" style={{ fontFamily: "'Sora', sans-serif" }}>
+              De cero a recibir pedidos en <span className="text-brand-600">4 pasos</span>
+            </h2>
+            <p className="text-gray-500 text-lg max-w-lg mx-auto">
+              Literal. No necesitas a nadie de sistemas.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {STEPS.map((step, i) => (
+              <div key={step.num} className="relative">
+                {/* Connector line */}
+                {i < STEPS.length - 1 && (
+                  <div className="hidden lg:block absolute top-8 left-[calc(100%+0.5rem)] w-[calc(100%-1rem)] h-px bg-gradient-to-r from-brand-300 to-brand-100" />
+                )}
+                <div className="text-4xl font-extrabold text-brand-100 mb-3" style={{ fontFamily: "'Sora', sans-serif" }}>
+                  {step.num}
+                </div>
+                <h3 className="font-bold text-lg text-gray-900 mb-2">{step.title}</h3>
+                <p className="text-sm text-gray-500 leading-relaxed">{step.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── CTA Final ─── */}
+      <section className="py-20 sm:py-28">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-10 sm:p-16 text-center">
+            <div className="absolute inset-0 bg-gradient-to-br from-brand-600/20 via-transparent to-teal-600/20" />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-brand-500/10 rounded-full blur-3xl" />
+
+            <div className="relative">
+              <h2
+                className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-tight mb-5 leading-tight"
+                style={{ fontFamily: "'Sora', sans-serif" }}
+              >
+                Deja de perder pedidos.<br />
+                <span className="bg-gradient-to-r from-brand-400 to-teal-300 bg-clip-text text-transparent">
+                  Empieza a recibirlos.
+                </span>
+              </h2>
+              <p className="text-gray-400 text-lg max-w-lg mx-auto mb-10">
+                Crea tu cuenta en segundos y ten tu menú digital listo hoy mismo. Sin costos ocultos, sin contratos.
+              </p>
+              <Link
+                href="/signup"
+                className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-white text-gray-900 font-bold text-base hover:bg-brand-50 hover:shadow-xl transition-all"
+              >
+                Crear mi cuenta gratis
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Footer ─── */}
+      <footer className="border-t border-gray-100 py-10">
+        <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-base font-bold tracking-tight" style={{ fontFamily: "'Sora', sans-serif" }}>
+              <span className="text-brand-600">MEN</span>IUS
+            </span>
+            <span className="text-sm text-gray-400">&copy; {new Date().getFullYear()}</span>
+          </div>
+          <div className="flex items-center gap-6 text-sm text-gray-400">
+            <span>Hecho para restaurantes que quieren crecer</span>
+          </div>
+        </div>
       </footer>
     </div>
   );
