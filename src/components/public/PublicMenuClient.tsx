@@ -283,53 +283,39 @@ function CartDrawer({ restaurant, tableName }: { restaurant: Restaurant; tableNa
     setSubmitting(true);
 
     try {
-      const { createClient } = await import('@/lib/supabase/browser');
-      const supabase = createClient();
-
-      const orderItems = items.map((item) => ({
-        product_id: item.product.id,
-        variant_id: item.variant?.id ?? null,
-        qty: item.qty,
-        unit_price: Number(item.product.price) + (item.variant?.price_delta ?? 0),
-        line_total: item.lineTotal,
-        notes: item.notes,
-      }));
-
-      // Generate a simple order number
-      const orderNum = `ORD-${Date.now().toString(36).toUpperCase()}`;
-
-      const { data: order, error } = await supabase.from('orders').insert({
+      // Use the protected API route instead of direct Supabase access
+      // This ensures server-side validation of all order data
+      const orderPayload = {
         restaurant_id: restaurant.id,
-        order_number: orderNum,
         customer_name: customerName,
         notes: orderNotes,
-        total: totalPrice(),
-        status: 'pending',
-      }).select().single();
+        items: items.map((item) => ({
+          product_id: item.product.id,
+          variant_id: item.variant?.id ?? null,
+          qty: item.qty,
+          unit_price: Number(item.product.price) + (item.variant?.price_delta ?? 0),
+          line_total: item.lineTotal,
+          notes: item.notes,
+          extras: item.extras.map((ex) => ({
+            extra_id: ex.id,
+            price: Number(ex.price),
+          })),
+        })),
+      };
 
-      if (error) throw error;
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderPayload),
+      });
 
-      // Insert order items
-      for (const oi of orderItems) {
-        const { data: orderItem } = await supabase.from('order_items').insert({
-          order_id: order.id,
-          ...oi,
-        }).select().single();
+      const result = await response.json();
 
-        // Insert extras for each item
-        const cartItem = items.find((i) => i.product.id === oi.product_id);
-        if (orderItem && cartItem?.extras.length) {
-          await supabase.from('order_item_extras').insert(
-            cartItem.extras.map((ex) => ({
-              order_item_id: orderItem.id,
-              extra_id: ex.id,
-              price: Number(ex.price),
-            }))
-          );
-        }
+      if (!response.ok) {
+        throw new Error(result.error || 'Error al enviar el pedido');
       }
 
-      setOrderNumber(order.order_number);
+      setOrderNumber(result.order.order_number);
       clearCart();
     } catch (err) {
       console.error('Error placing order:', err);

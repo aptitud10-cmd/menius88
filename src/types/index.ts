@@ -2,6 +2,40 @@
 // MENIUS — Types
 // ============================================================
 
+// ---- Theme & Configuration ----
+
+export interface RestaurantTheme {
+  primaryColor: string;
+  accentColor: string;
+  fontHeading: string;
+  fontBody: string;
+  borderRadius: string;
+  darkMode: boolean;
+}
+
+export interface DaySchedule {
+  day: string;
+  open: string;
+  close: string;
+  closed: boolean;
+}
+
+export interface OrderConfig {
+  deliveryEnabled: boolean;
+  pickupEnabled: boolean;
+  dineInEnabled: boolean;
+  deliveryFee: number;
+  deliveryMinOrder: number;
+  deliveryRadius: number;
+  estimatedPrepTime: number;
+  autoAcceptOrders: boolean;
+  taxRate: number;
+}
+
+export type SubscriptionPlan = 'trial' | 'basic' | 'pro' | 'premium' | 'enterprise' | 'cancelled';
+
+// ---- Restaurant (Extended) ----
+
 export interface Restaurant {
   id: string;
   name: string;
@@ -11,6 +45,25 @@ export interface Restaurant {
   currency: string;
   logo_url: string | null;
   created_at: string;
+  // Premium storefront fields
+  tagline?: string;
+  description?: string;
+  cover_image_url?: string;
+  cuisine_type?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  theme?: RestaurantTheme;
+  operating_hours?: DaySchedule[];
+  order_config?: OrderConfig;
+  // Subscription
+  subscription_plan?: SubscriptionPlan;
+  trial_ends_at?: string;
+  stripe_customer_id?: string;
+  stripe_subscription_id?: string;
+  stripe_connect_account_id?: string;
+  is_active?: boolean;
 }
 
 export interface Profile {
@@ -41,6 +94,13 @@ export interface Product {
   is_active: boolean;
   sort_order: number;
   created_at: string;
+  // POS integration fields
+  external_id?: string;
+  external_provider?: string;
+  allergens?: string[];
+  dietary_tags?: string[]; // vegetarian, vegan, gluten-free
+  prep_time_minutes?: number;
+  calories?: number;
   // joined
   variants?: ProductVariant[];
   extras?: ProductExtra[];
@@ -72,6 +132,8 @@ export interface Table {
 }
 
 export type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivered' | 'cancelled';
+export type OrderType = 'dine_in' | 'pickup' | 'delivery';
+export type PaymentStatus = 'unpaid' | 'paid' | 'refunded' | 'partial_refund';
 
 export interface Order {
   id: string;
@@ -83,6 +145,21 @@ export interface Order {
   notes: string;
   total: number;
   created_at: string;
+  // Extended fields
+  order_type?: OrderType;
+  external_order_id?: string;
+  external_provider?: string;
+  delivery_address?: string;
+  delivery_fee?: number;
+  tax_amount?: number;
+  subtotal?: number;
+  tip_amount?: number;
+  payment_status?: PaymentStatus;
+  payment_method?: string;
+  stripe_payment_intent_id?: string;
+  estimated_ready_at?: string;
+  customer_phone?: string;
+  customer_email?: string;
   // joined
   items?: OrderItem[];
   table?: Table;

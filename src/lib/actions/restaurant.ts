@@ -3,22 +3,25 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { getTenantContext, validateResourceOwnership } from '@/lib/tenant';
+import { TenantError } from '@/lib/tenant-types';
 import type { CreateRestaurantInput, CategoryInput, ProductInput, TableInput } from '@/lib/validations';
 
-// ---- Restaurant ----
+// ============================================================
+// RESTAURANT CRUD
+// ============================================================
+
 export async function createRestaurant(data: CreateRestaurantInput) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: 'No autenticado' };
 
   // Check slug is unique
-  const { data: existing, error: existingError } = await supabase
+  const { data: existing } = await supabase
     .from('restaurants')
     .select('id')
     .eq('slug', data.slug)
     .maybeSingle();
-
-  if (existingError) return { error: existingError.message };
 
   if (existing) return { error: 'Ese slug ya está en uso' };
 
@@ -36,170 +39,280 @@ export async function createRestaurant(data: CreateRestaurantInput) {
 
   if (error) return { error: error.message };
 
-  // Ensure profile exists and is linked to the new restaurant.
-  const { error: profileError } = await supabase
+  // Update profile with default restaurant
+  await supabase
     .from('profiles')
-    .upsert(
-      {
-        user_id: user.id,
-        default_restaurant_id: restaurant.id,
-        full_name: (user.user_metadata?.full_name as string) ?? '',
-        role: 'owner',
-      },
-      { onConflict: 'user_id' }
-    );
-
-  if (profileError) return { error: profileError.message };
+    .upsert({
+      user_id: user.id,
+      default_restaurant_id: restaurant.id,
+      role: 'owner',
+    }, { onConflict: 'user_id' });
 
   redirect('/app/orders');
 }
 
-// ---- Categories ----
+// ============================================================
+// CATEGORY CRUD — ALL operations validate tenant ownership
+// ============================================================
+
 export async function createCategory(data: CategoryInput) {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: 'No autenticado' };
+  try {
+    const tenant = await getTenantContext();
+    const supabase = createClient();
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('default_restaurant_id')
-    .eq('user_id', user.id)
-    .single();
+    const { error } = await supabase.from('categories').insert({
+      restaurant_id: tenant.restaurantId, // Always from tenant context, NEVER from user input
+      name: data.name,
+      sort_order: data.sort_order,
+      is_active: data.is_active,
+    });
 
-  if (!profile?.default_restaurant_id) return { error: 'Sin restaurante' };
-
-  const { error } = await supabase.from('categories').insert({
-    restaurant_id: profile.default_restaurant_id,
-    name: data.name,
-    sort_order: data.sort_order,
-    is_active: data.is_active,
-  });
-
-  if (error) return { error: error.message };
-  revalidatePath('/app/menu/categories');
-  return { success: true };
+    if (error) return { error: error.message };
+    revalidatePath('/app/menu/categories');
+    return { success: true };
+  } catch (e) {
+    if (e instanceof TenantError) return { error: e.message };
+    throw e;
+  }
 }
 
 export async function updateCategory(id: string, data: CategoryInput) {
-  const supabase = createClient();
-  const { error } = await supabase
-    .from('categories')
-    .update({ name: data.name, sort_order: data.sort_order, is_active: data.is_active })
-    .eq('id', id);
+  try {
+    const tenant = await getTenantContext();
+    const supabase = createClient();
 
-  if (error) return { error: error.message };
-  revalidatePath('/app/menu/categories');
-  return { success: true };
+    // CRITICAL: Verify this category belongs to the tenant BEFORE updating
+    const isOwned = await validateResourceOwnership('categories', id, tenant.restaurantId);
+    if (!isOwned) {
+      return { error: 'No tiene permisos para modificar esta categoría' };
+    }
+
+    const { error } = await supabase
+      .from('categories')
+      .update({ name: data.name, sort_order: data.sort_order, is_active: data.is_active })
+      .eq('id', id)
+      .eq('restaurant_id', tenant.restaurantId); // Double-check with tenant filter
+
+    if (error) return { error: error.message };
+    revalidatePath('/app/menu/categories');
+    return { success: true };
+  } catch (e) {
+    if (e instanceof TenantError) return { error: e.message };
+    throw e;
+  }
 }
 
 export async function deleteCategory(id: string) {
-  const supabase = createClient();
-  const { error } = await supabase.from('categories').delete().eq('id', id);
-  if (error) return { error: error.message };
-  revalidatePath('/app/menu/categories');
-  return { success: true };
+  try {
+    const tenant = await getTenantContext();
+    const supabase = createClient();
+
+    // CRITICAL: Verify ownership before deleting
+    const isOwned = await validateResourceOwnership('categories', id, tenant.restaurantId);
+    if (!isOwned) {
+      return { error: 'No tiene permisos para eliminar esta categoría' };
+    }
+
+    const { error } = await supabase
+      .from('categories')
+      .delete()
+      .eq('id', id)
+      .eq('restaurant_id', tenant.restaurantId); // Double-check with tenant filter
+
+    if (error) return { error: error.message };
+    revalidatePath('/app/menu/categories');
+    return { success: true };
+  } catch (e) {
+    if (e instanceof TenantError) return { error: e.message };
+    throw e;
+  }
 }
 
-// ---- Products ----
+// ============================================================
+// PRODUCT CRUD — ALL operations validate tenant ownership
+// ============================================================
+
 export async function createProduct(data: ProductInput) {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: 'No autenticado' };
+  try {
+    const tenant = await getTenantContext();
+    const supabase = createClient();
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('default_restaurant_id')
-    .eq('user_id', user.id)
-    .single();
+    // Verify the category belongs to this tenant
+    const categoryOwned = await validateResourceOwnership('categories', data.category_id, tenant.restaurantId);
+    if (!categoryOwned) {
+      return { error: 'Categoría no válida para este restaurante' };
+    }
 
-  if (!profile?.default_restaurant_id) return { error: 'Sin restaurante' };
+    const { error } = await supabase.from('products').insert({
+      restaurant_id: tenant.restaurantId, // Always from tenant context
+      category_id: data.category_id,
+      name: data.name,
+      description: data.description,
+      price: data.price,
+      is_active: data.is_active,
+    });
 
-  const { error } = await supabase.from('products').insert({
-    restaurant_id: profile.default_restaurant_id,
-    category_id: data.category_id,
-    name: data.name,
-    description: data.description,
-    price: data.price,
-    is_active: data.is_active,
-  });
-
-  if (error) return { error: error.message };
-  revalidatePath('/app/menu/products');
-  return { success: true };
+    if (error) return { error: error.message };
+    revalidatePath('/app/menu/products');
+    return { success: true };
+  } catch (e) {
+    if (e instanceof TenantError) return { error: e.message };
+    throw e;
+  }
 }
 
 export async function updateProduct(id: string, data: Partial<ProductInput> & { image_url?: string }) {
-  const supabase = createClient();
-  const { error } = await supabase
-    .from('products')
-    .update(data)
-    .eq('id', id);
+  try {
+    const tenant = await getTenantContext();
+    const supabase = createClient();
 
-  if (error) return { error: error.message };
-  revalidatePath('/app/menu/products');
-  return { success: true };
+    // CRITICAL: Verify this product belongs to the tenant BEFORE updating
+    const isOwned = await validateResourceOwnership('products', id, tenant.restaurantId);
+    if (!isOwned) {
+      return { error: 'No tiene permisos para modificar este producto' };
+    }
+
+    // If changing category, verify new category also belongs to tenant
+    if (data.category_id) {
+      const categoryOwned = await validateResourceOwnership('categories', data.category_id, tenant.restaurantId);
+      if (!categoryOwned) {
+        return { error: 'Categoría no válida para este restaurante' };
+      }
+    }
+
+    const { error } = await supabase
+      .from('products')
+      .update(data)
+      .eq('id', id)
+      .eq('restaurant_id', tenant.restaurantId); // Double-check with tenant filter
+
+    if (error) return { error: error.message };
+    revalidatePath('/app/menu/products');
+    return { success: true };
+  } catch (e) {
+    if (e instanceof TenantError) return { error: e.message };
+    throw e;
+  }
 }
 
 export async function deleteProduct(id: string) {
-  const supabase = createClient();
-  const { error } = await supabase.from('products').delete().eq('id', id);
-  if (error) return { error: error.message };
-  revalidatePath('/app/menu/products');
-  return { success: true };
+  try {
+    const tenant = await getTenantContext();
+    const supabase = createClient();
+
+    // CRITICAL: Verify ownership before deleting
+    const isOwned = await validateResourceOwnership('products', id, tenant.restaurantId);
+    if (!isOwned) {
+      return { error: 'No tiene permisos para eliminar este producto' };
+    }
+
+    const { error } = await supabase
+      .from('products')
+      .delete()
+      .eq('id', id)
+      .eq('restaurant_id', tenant.restaurantId); // Double-check with tenant filter
+
+    if (error) return { error: error.message };
+    revalidatePath('/app/menu/products');
+    return { success: true };
+  } catch (e) {
+    if (e instanceof TenantError) return { error: e.message };
+    throw e;
+  }
 }
 
-// ---- Tables ----
+// ============================================================
+// TABLE CRUD — ALL operations validate tenant ownership
+// ============================================================
+
 export async function createTable(data: TableInput) {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: 'No autenticado' };
+  try {
+    const tenant = await getTenantContext();
+    const supabase = createClient();
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('default_restaurant_id')
-    .eq('user_id', user.id)
-    .single();
+    // Get restaurant slug for QR
+    const { data: restaurant } = await supabase
+      .from('restaurants')
+      .select('slug')
+      .eq('id', tenant.restaurantId)
+      .single();
 
-  if (!profile?.default_restaurant_id) return { error: 'Sin restaurante' };
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://menius.vercel.app';
+    const qrValue = `${appUrl}/r/${restaurant?.slug}?table=${data.name}`;
 
-  // Get restaurant slug for QR
-  const { data: restaurant } = await supabase
-    .from('restaurants')
-    .select('slug')
-    .eq('id', profile.default_restaurant_id)
-    .single();
+    const { error } = await supabase.from('tables').insert({
+      restaurant_id: tenant.restaurantId, // Always from tenant context
+      name: data.name,
+      qr_code_value: qrValue,
+    });
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://menius.vercel.app';
-  const qrValue = `${appUrl}/r/${restaurant?.slug}?table=${data.name}`;
-
-  const { error } = await supabase.from('tables').insert({
-    restaurant_id: profile.default_restaurant_id,
-    name: data.name,
-    qr_code_value: qrValue,
-  });
-
-  if (error) return { error: error.message };
-  revalidatePath('/app/tables');
-  return { success: true };
+    if (error) return { error: error.message };
+    revalidatePath('/app/tables');
+    return { success: true };
+  } catch (e) {
+    if (e instanceof TenantError) return { error: e.message };
+    throw e;
+  }
 }
 
 export async function deleteTable(id: string) {
-  const supabase = createClient();
-  const { error } = await supabase.from('tables').delete().eq('id', id);
-  if (error) return { error: error.message };
-  revalidatePath('/app/tables');
-  return { success: true };
+  try {
+    const tenant = await getTenantContext();
+    const supabase = createClient();
+
+    // CRITICAL: Verify ownership before deleting
+    const isOwned = await validateResourceOwnership('tables', id, tenant.restaurantId);
+    if (!isOwned) {
+      return { error: 'No tiene permisos para eliminar esta mesa' };
+    }
+
+    const { error } = await supabase
+      .from('tables')
+      .delete()
+      .eq('id', id)
+      .eq('restaurant_id', tenant.restaurantId); // Double-check with tenant filter
+
+    if (error) return { error: error.message };
+    revalidatePath('/app/tables');
+    return { success: true };
+  } catch (e) {
+    if (e instanceof TenantError) return { error: e.message };
+    throw e;
+  }
 }
 
-// ---- Orders ----
-export async function updateOrderStatus(orderId: string, status: string) {
-  const supabase = createClient();
-  const { error } = await supabase
-    .from('orders')
-    .update({ status })
-    .eq('id', orderId);
+// ============================================================
+// ORDER MANAGEMENT — ALL operations validate tenant ownership
+// ============================================================
 
-  if (error) return { error: error.message };
-  revalidatePath('/app/orders');
-  return { success: true };
+export async function updateOrderStatus(orderId: string, status: string) {
+  try {
+    const tenant = await getTenantContext();
+    const supabase = createClient();
+
+    // CRITICAL: Verify this order belongs to the tenant BEFORE updating
+    const isOwned = await validateResourceOwnership('orders', orderId, tenant.restaurantId);
+    if (!isOwned) {
+      return { error: 'No tiene permisos para modificar esta orden' };
+    }
+
+    // Validate status is a valid transition
+    const validStatuses = ['pending', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled'];
+    if (!validStatuses.includes(status)) {
+      return { error: 'Estado de orden inválido' };
+    }
+
+    const { error } = await supabase
+      .from('orders')
+      .update({ status })
+      .eq('id', orderId)
+      .eq('restaurant_id', tenant.restaurantId); // Double-check with tenant filter
+
+    if (error) return { error: error.message };
+    revalidatePath('/app/orders');
+    return { success: true };
+  } catch (e) {
+    if (e instanceof TenantError) return { error: e.message };
+    throw e;
+  }
 }
