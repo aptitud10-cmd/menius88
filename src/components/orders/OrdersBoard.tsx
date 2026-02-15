@@ -5,7 +5,7 @@ import Image from 'next/image';
 import {
   Clock, ChefHat, CheckCircle, Package, XCircle, User, ArrowRight,
   Bell, BellOff, Volume2, VolumeX, RefreshCw, History, LayoutGrid,
-  X, Phone, FileText, Printer, ChevronRight, Download,
+  X, Phone, FileText, Printer, ChevronRight, Download, Link2,
 } from 'lucide-react';
 import { updateOrderStatus } from '@/lib/actions/restaurant';
 import { formatPrice, timeAgo, ORDER_STATUS_CONFIG, cn } from '@/lib/utils';
@@ -411,6 +411,24 @@ function OrderDetailModal({ order, onClose, onStatusChange }: {
               title="Recibo"
             >
               <Download className="w-4 h-4" />
+            </button>
+            <button
+              onClick={async () => {
+                const res = await fetch('/api/tenant/orders/payment-link', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ order_id: order.id }),
+                });
+                const data = await res.json();
+                if (data.payment_link) {
+                  await navigator.clipboard.writeText(data.payment_link);
+                  alert('Link de pago copiado al portapapeles');
+                }
+              }}
+              className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors"
+              title="Link de pago"
+            >
+              <Link2 className="w-4 h-4" />
             </button>
             <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors">
               <X className="w-4 h-4" />

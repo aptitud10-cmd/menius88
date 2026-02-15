@@ -959,6 +959,15 @@ function CartDrawer({ restaurant, tableName }: { restaurant: Restaurant; tableNa
           <div className="space-y-2">
             <button
               onClick={() => {
+                router.push(`/r/${restaurant.slug}/pay/${orderResult.order_number}`);
+              }}
+              className="w-full py-3 rounded-xl text-white font-semibold transition-colors flex items-center justify-center gap-2"
+              style={{ backgroundColor: restaurant.theme?.primaryColor ?? '#E11D48' }}
+            >
+              💳 Pagar ahora
+            </button>
+            <button
+              onClick={() => {
                 router.push(`/r/${restaurant.slug}/order/${orderResult.order_number}`);
               }}
               className="w-full py-3 rounded-xl bg-gray-900 text-white font-semibold hover:bg-gray-800 transition-colors"
