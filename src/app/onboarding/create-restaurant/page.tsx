@@ -33,9 +33,16 @@ export default function CreateRestaurantPage() {
     }
 
     setLoading(true);
-    const result = await createRestaurant(parsed.data);
-    if (result?.error) {
-      setError(result.error);
+    try {
+      const result = await createRestaurant(parsed.data);
+      if (result?.error) {
+        setError(result.error);
+        setLoading(false);
+      }
+    } catch (err: any) {
+      // redirect() throws NEXT_REDIRECT — that's expected, let it propagate
+      if (err?.digest?.includes('NEXT_REDIRECT')) throw err;
+      setError('Error inesperado. Intenta de nuevo.');
       setLoading(false);
     }
   };

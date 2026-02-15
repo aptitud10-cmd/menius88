@@ -7,7 +7,7 @@ import type { SignupInput, LoginInput } from '@/lib/validations';
 export async function signup(data: SignupInput) {
   const supabase = createClient();
 
-  const { error } = await supabase.auth.signUp({
+  const { data: authData, error } = await supabase.auth.signUp({
     email: data.email,
     password: data.password,
     options: {
@@ -16,6 +16,19 @@ export async function signup(data: SignupInput) {
   });
 
   if (error) return { error: error.message };
+
+  // If email confirmation is required, Supabase returns a user but no session
+  if (authData?.user && !authData.session) {
+    // User created but needs email confirmation — try auto sign-in
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: data.email,
+      password: data.password,
+    });
+
+    if (signInError) {
+      return { error: 'Cuenta creada. Confirma tu email o intenta iniciar sesión.' };
+    }
+  }
 
   redirect('/onboarding/create-restaurant');
 }
