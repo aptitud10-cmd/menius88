@@ -18,6 +18,7 @@ interface PublicMenuClientProps {
   tableName: string | null;
   currentLanguage?: string;
   supportedLanguages?: string[];
+  reservationConfig?: any;
 }
 
 // ---- Dietary tag icons ----
@@ -45,13 +46,14 @@ const LANG_FLAGS: Record<string, string> = {
   es: '🇲🇽', en: '🇺🇸', fr: '🇫🇷', de: '🇩🇪', pt: '🇧🇷', it: '🇮🇹', ja: '🇯🇵', zh: '🇨🇳', ko: '🇰🇷',
 };
 
-export function PublicMenuClient({ restaurant, categories, products, tableName, currentLanguage = 'es', supportedLanguages = ['es'] }: PublicMenuClientProps) {
+export function PublicMenuClient({ restaurant, categories, products, tableName, currentLanguage = 'es', supportedLanguages = ['es'], reservationConfig }: PublicMenuClientProps) {
   const [activeCategory, setActiveCategory] = useState(categories[0]?.id ?? '');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showInfo, setShowInfo] = useState(false);
   const [allergenFilters, setAllergenFilters] = useState<string[]>([]);
   const [dietaryFilters, setDietaryFilters] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [showReservation, setShowReservation] = useState(false);
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const catBarRef = useRef<HTMLDivElement>(null);
 
@@ -189,6 +191,21 @@ export function PublicMenuClient({ restaurant, categories, products, tableName, 
             </div>
           </div>
         </header>
+      )}
+
+      {/* ===== Reservation CTA ===== */}
+      {reservationConfig?.enabled && (
+        <div className="bg-brand-50 border-b border-brand-100">
+          <div className="max-w-2xl mx-auto px-4 py-2.5 flex items-center justify-between">
+            <p className="text-xs text-brand-700 font-medium">📅 ¡Reserva tu mesa ahora!</p>
+            <button
+              onClick={() => setShowReservation(true)}
+              className="px-3 py-1 rounded-full bg-brand-600 text-white text-xs font-semibold hover:bg-brand-700 transition-colors"
+            >
+              Reservar
+            </button>
+          </div>
+        </div>
       )}
 
       {/* ===== Sticky Navigation ===== */}
@@ -404,6 +421,15 @@ export function PublicMenuClient({ restaurant, categories, products, tableName, 
       {/* ===== Restaurant Info Modal ===== */}
       {showInfo && (
         <InfoModal restaurant={restaurant} status={status} onClose={() => setShowInfo(false)} />
+      )}
+
+      {/* ===== Reservation Modal ===== */}
+      {showReservation && reservationConfig?.enabled && (
+        <ReservationModal
+          restaurantId={restaurant.id}
+          config={reservationConfig}
+          onClose={() => setShowReservation(false)}
+        />
       )}
 
       {/* ===== Product Detail Modal ===== */}
@@ -1299,6 +1325,182 @@ function CartDrawer({ restaurant, tableName }: { restaurant: Restaurant; tableNa
                     Confirmar pedido · {formatPrice(grandTotal)}
                   </>
                 )}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// =========================================================
+// Reservation Modal (Public)
+// =========================================================
+function ReservationModal({ restaurantId, config, onClose }: {
+  restaurantId: string;
+  config: any;
+  onClose: () => void;
+}) {
+  const [step, setStep] = useState<'form' | 'success'>('form');
+  const [date, setDate] = useState('');
+  const [time, setTime] = useState('');
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [partySize, setPartySize] = useState(2);
+  const [notes, setNotes] = useState('');
+  const [slots, setSlots] = useState<{ time: string; available: boolean }[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  const today = new Date().toISOString().split('T')[0];
+  const maxDateObj = new Date();
+  maxDateObj.setDate(maxDateObj.getDate() + (config.advanceDays ?? 30));
+  const maxDateStr = maxDateObj.toISOString().split('T')[0];
+
+  const fetchSlots = async (d: string) => {
+    setLoadingSlots(true);
+    try {
+      const res = await fetch(`/api/reservations?restaurant_id=${restaurantId}&date=${d}`);
+      const data = await res.json();
+      setSlots(data.slots ?? []);
+    } catch { setSlots([]); }
+    setLoadingSlots(false);
+  };
+
+  const handleDateChange = (d: string) => {
+    setDate(d);
+    setTime('');
+    if (d) fetchSlots(d);
+  };
+
+  const handleSubmit = async () => {
+    if (!name || !phone || !date || !time) {
+      setError('Completa todos los campos requeridos');
+      return;
+    }
+    setSubmitting(true);
+    setError('');
+    try {
+      const res = await fetch('/api/reservations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          restaurant_id: restaurantId,
+          customer_name: name,
+          customer_phone: phone,
+          party_size: partySize,
+          date,
+          time_slot: time,
+          notes,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setStep('success');
+    } catch (err: any) {
+      setError(err.message);
+    }
+    setSubmitting(false);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center" onClick={onClose}>
+      <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl max-h-[90vh] overflow-y-auto p-5" onClick={e => e.stopPropagation()}>
+        {step === 'success' ? (
+          <div className="text-center py-8">
+            <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
+              <Check className="w-7 h-7 text-emerald-600" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-1">¡Reservación recibida!</h3>
+            <p className="text-sm text-gray-500 mb-4">Te confirmaremos por teléfono pronto</p>
+            <p className="text-sm font-medium text-gray-700">{date} a las {time} — {partySize} personas</p>
+            <button onClick={onClose} className="mt-6 px-6 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-medium">
+              Cerrar
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-lg font-bold text-gray-900">📅 Reservar mesa</h3>
+              <button onClick={onClose} className="p-1"><X className="w-5 h-5 text-gray-400" /></button>
+            </div>
+
+            {error && <p className="text-xs text-red-500 mb-3 bg-red-50 px-3 py-2 rounded-xl">{error}</p>}
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Fecha *</label>
+                <input type="date" value={date} onChange={e => handleDateChange(e.target.value)} min={today} max={maxDateStr}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
+              </div>
+
+              {date && (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Horario *</label>
+                  {loadingSlots ? (
+                    <div className="flex gap-2">{[...Array(4)].map((_, i) => <div key={i} className="h-9 w-16 bg-gray-100 rounded-lg animate-pulse" />)}</div>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {slots.map(s => (
+                        <button key={s.time} disabled={!s.available} onClick={() => setTime(s.time)}
+                          className={cn(
+                            'px-3 py-2 rounded-lg text-xs font-medium transition-all border',
+                            !s.available ? 'bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed' :
+                            time === s.time ? 'bg-brand-600 text-white border-brand-600' : 'bg-white text-gray-700 border-gray-200 hover:border-brand-300'
+                          )}
+                        >
+                          {s.time}
+                        </button>
+                      ))}
+                      {slots.length === 0 && <p className="text-xs text-gray-400">No hay horarios disponibles</p>}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Personas *</label>
+                <div className="flex gap-1.5">
+                  {Array.from({ length: Math.min(config.maxPartySize ?? 12, 8) }, (_, i) => i + 1).map(n => (
+                    <button key={n} onClick={() => setPartySize(n)}
+                      className={cn(
+                        'w-9 h-9 rounded-lg text-sm font-medium transition-all border',
+                        partySize === n ? 'bg-brand-600 text-white border-brand-600' : 'bg-white text-gray-600 border-gray-200 hover:border-brand-300'
+                      )}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Nombre *</label>
+                  <input value={name} onChange={e => setName(e.target.value)} placeholder="Tu nombre"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Teléfono *</label>
+                  <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="55 1234 5678"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Notas (opcional)</label>
+                <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="Cumpleaños, alergias, silla alta..."
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 resize-none" />
+              </div>
+
+              <button
+                onClick={handleSubmit}
+                disabled={submitting || !date || !time || !name || !phone}
+                className="w-full py-3 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 disabled:opacity-50 transition-all"
+              >
+                {submitting ? 'Reservando...' : 'Confirmar reservación'}
               </button>
             </div>
           </>

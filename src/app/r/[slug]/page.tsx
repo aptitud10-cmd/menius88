@@ -106,6 +106,7 @@ export default async function PublicMenuPage({ params, searchParams }: PageProps
       tableName={searchParams.table ?? null}
       currentLanguage={requestedLang}
       supportedLanguages={supportedLangs}
+      reservationConfig={restaurant.reservation_config ?? null}
     />
   );
 }

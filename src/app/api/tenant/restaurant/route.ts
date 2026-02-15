@@ -62,7 +62,7 @@ export async function PATCH(request: NextRequest) {
       'tagline', 'description', 'cover_image_url', 'cuisine_type',
       'address', 'phone', 'email', 'website',
       // Configuration (JSONB)
-      'theme', 'operating_hours', 'order_config',
+      'theme', 'operating_hours', 'order_config', 'reservation_config',
     ];
     const updateData: Record<string, unknown> = {};
     

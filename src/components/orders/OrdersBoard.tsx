@@ -405,6 +405,13 @@ function OrderDetailModal({ order, onClose, onStatusChange }: {
             <button onClick={handlePrint} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors" title="Imprimir ticket">
               <Printer className="w-4 h-4" />
             </button>
+            <button
+              onClick={() => window.open(`/api/tenant/orders/receipt?order_id=${order.id}`, '_blank')}
+              className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors"
+              title="Recibo"
+            >
+              <Download className="w-4 h-4" />
+            </button>
             <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors">
               <X className="w-4 h-4" />
             </button>
