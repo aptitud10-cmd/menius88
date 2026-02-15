@@ -15,17 +15,21 @@ export default async function OrdersPage() {
 
   if (!profile?.default_restaurant_id) redirect('/onboarding/create-restaurant');
 
+  const restaurantId = profile.default_restaurant_id;
+
   const { data: orders } = await supabase
     .from('orders')
-    .select('*, order_items(*, product:products(name))')
-    .eq('restaurant_id', profile.default_restaurant_id)
+    .select('*, order_items(*, product:products(name, image_url))')
+    .eq('restaurant_id', restaurantId)
     .order('created_at', { ascending: false })
-    .limit(50);
+    .limit(100);
 
   return (
     <div>
-      <h1 className="text-xl font-bold mb-6">Órdenes</h1>
-      <OrdersBoard initialOrders={orders ?? []} />
+      <OrdersBoard
+        initialOrders={orders ?? []}
+        restaurantId={restaurantId}
+      />
     </div>
   );
 }
