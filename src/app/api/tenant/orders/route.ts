@@ -13,6 +13,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getTenantContext, validateResourceOwnership } from '@/lib/tenant';
 import { TenantError } from '@/lib/tenant-types';
 import { createClient } from '@/lib/supabase/server';
+import { logAudit } from '@/lib/audit';
 
 // GET /api/tenant/orders — List tenant's orders
 export async function GET(request: NextRequest) {
@@ -107,6 +108,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    logAudit({ restaurantId: tenant.restaurantId, userId: tenant.userId, userEmail: tenant.userEmail, action: 'status_change', entityType: 'order', entityId: orderId, details: { status, orderNumber: order?.order_number } });
     return NextResponse.json({ order });
   } catch (e) {
     if (e instanceof TenantError) {

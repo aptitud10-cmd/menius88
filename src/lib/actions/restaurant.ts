@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { getTenantContext, validateResourceOwnership } from '@/lib/tenant';
 import { TenantError } from '@/lib/tenant-types';
+import { logAudit } from '@/lib/audit';
 import type { CreateRestaurantInput, CategoryInput, ProductInput, TableInput } from '@/lib/validations';
 
 // ============================================================
@@ -60,14 +61,15 @@ export async function createCategory(data: CategoryInput) {
     const tenant = await getTenantContext();
     const supabase = createClient();
 
-    const { error } = await supabase.from('categories').insert({
-      restaurant_id: tenant.restaurantId, // Always from tenant context, NEVER from user input
+    const { data: newCat, error } = await supabase.from('categories').insert({
+      restaurant_id: tenant.restaurantId,
       name: data.name,
       sort_order: data.sort_order,
       is_active: data.is_active,
-    });
+    }).select('id').single();
 
     if (error) return { error: error.message };
+    logAudit({ restaurantId: tenant.restaurantId, userId: tenant.userId, userEmail: tenant.userEmail, action: 'create', entityType: 'category', entityId: newCat?.id, details: { name: data.name } });
     revalidatePath('/app/menu/categories');
     return { success: true };
   } catch (e) {
@@ -127,9 +129,10 @@ export async function deleteCategory(id: string) {
       .from('categories')
       .delete()
       .eq('id', id)
-      .eq('restaurant_id', tenant.restaurantId); // Double-check with tenant filter
+      .eq('restaurant_id', tenant.restaurantId);
 
     if (error) return { error: error.message };
+    logAudit({ restaurantId: tenant.restaurantId, userId: tenant.userId, userEmail: tenant.userEmail, action: 'delete', entityType: 'category', entityId: id });
     revalidatePath('/app/menu/categories');
     return { success: true };
   } catch (e) {
@@ -153,16 +156,17 @@ export async function createProduct(data: ProductInput) {
       return { error: 'Categoría no válida para este restaurante' };
     }
 
-    const { error } = await supabase.from('products').insert({
-      restaurant_id: tenant.restaurantId, // Always from tenant context
+    const { data: newProd, error } = await supabase.from('products').insert({
+      restaurant_id: tenant.restaurantId,
       category_id: data.category_id,
       name: data.name,
       description: data.description,
       price: data.price,
       is_active: data.is_active,
-    });
+    }).select('id').single();
 
     if (error) return { error: error.message };
+    logAudit({ restaurantId: tenant.restaurantId, userId: tenant.userId, userEmail: tenant.userEmail, action: 'create', entityType: 'product', entityId: newProd?.id, details: { name: data.name, price: data.price } });
     revalidatePath('/app/menu/products');
     return { success: true };
   } catch (e) {
@@ -220,9 +224,10 @@ export async function deleteProduct(id: string) {
       .from('products')
       .delete()
       .eq('id', id)
-      .eq('restaurant_id', tenant.restaurantId); // Double-check with tenant filter
+      .eq('restaurant_id', tenant.restaurantId);
 
     if (error) return { error: error.message };
+    logAudit({ restaurantId: tenant.restaurantId, userId: tenant.userId, userEmail: tenant.userEmail, action: 'delete', entityType: 'product', entityId: id });
     revalidatePath('/app/menu/products');
     return { success: true };
   } catch (e) {

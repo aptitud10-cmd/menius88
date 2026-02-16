@@ -19,6 +19,7 @@ const TABS = [
   { id: 'general', label: 'General', icon: Store },
   { id: 'hours', label: 'Horarios', icon: Clock },
   { id: 'orders', label: 'Pedidos', icon: ChefHat },
+  { id: 'reports', label: 'Reportes', icon: Sparkles },
   { id: 'billing', label: 'Suscripción', icon: CreditCard },
 ] as const;
 
@@ -364,6 +365,42 @@ export function SettingsForm({ restaurant, userEmail, userName }: SettingsFormPr
                 <p className="text-xs text-gray-400">Los pedidos se confirman sin intervención manual</p>
               </div>
             </label>
+          </div>
+        )}
+
+        {/* REPORTS TAB */}
+        {activeTab === 'reports' && (
+          <div className="p-6 space-y-5">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Reportes automáticos</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Recibe un resumen semanal por email</p>
+            </div>
+
+            <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Reporte semanal</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Resumen de ventas, productos top y métricas clave</p>
+                </div>
+                <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400">
+                  Próximamente
+                </span>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Vista previa</p>
+              <a
+                href="/api/tenant/reports/weekly"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 transition-colors"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Ver reporte de esta semana
+              </a>
+              <p className="text-[10px] text-gray-400 mt-2">Abre el reporte en una nueva pestaña con los datos de los últimos 7 días</p>
+            </div>
           </div>
         )}
 
