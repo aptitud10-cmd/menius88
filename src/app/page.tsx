@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { WebsiteJsonLd } from '@/components/seo/JsonLd';
 
 /* ─── Icon components (thin line style) ─── */
 const IconQR = () => (
@@ -89,8 +90,10 @@ const STEPS = [
 /* ─── Page ─── */
 
 export default function LandingPage() {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://menius.vercel.app';
   return (
     <div className="min-h-screen flex flex-col overflow-hidden relative grain">
+      <WebsiteJsonLd appUrl={appUrl} />
 
       {/* ── Ambient background glows ── */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">

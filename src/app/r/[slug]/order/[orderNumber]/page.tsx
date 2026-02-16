@@ -8,9 +8,26 @@ interface PageProps {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const supabase = createClient();
+  const { data: restaurant } = await supabase
+    .from('restaurants')
+    .select('name, logo_url')
+    .eq('slug', params.slug)
+    .single();
+
+  const title = restaurant
+    ? `Pedido ${params.orderNumber} — ${restaurant.name}`
+    : `Pedido ${params.orderNumber}`;
+
   return {
-    title: `Pedido ${params.orderNumber} | MENIUS`,
-    description: `Seguimiento de tu pedido ${params.orderNumber}`,
+    title,
+    description: `Sigue el estado de tu pedido ${params.orderNumber} en tiempo real`,
+    robots: { index: false, follow: false },
+    openGraph: {
+      title,
+      description: `Tu pedido está en camino`,
+      ...(restaurant?.logo_url ? { images: [restaurant.logo_url] } : {}),
+    },
   };
 }
 

@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { PublicMenuClient } from '@/components/public/PublicMenuClient';
+import { RestaurantJsonLd, MenuJsonLd, BreadcrumbJsonLd } from '@/components/seo/JsonLd';
 
 interface PageProps {
   params: { slug: string };
@@ -10,23 +11,50 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const supabase = createClient();
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://menius.vercel.app';
   const { data: restaurant } = await supabase
     .from('restaurants')
-    .select('name, tagline, description, cuisine_type, cover_image_url')
+    .select('name, tagline, description, cuisine_type, cover_image_url, logo_url, address, phone')
     .eq('slug', params.slug)
     .single();
 
   if (!restaurant) return { title: 'No encontrado' };
 
+  const title = restaurant.cuisine_type
+    ? `${restaurant.name} — ${restaurant.cuisine_type} | Menú Digital`
+    : `${restaurant.name} — Menú Digital | Pide en Línea`;
+
   const description = restaurant.tagline
     || restaurant.description?.slice(0, 155)
-    || `Pide en línea de ${restaurant.name}`;
+    || `Explora el menú de ${restaurant.name} y pide en línea. Menú digital con QR, sin comisiones.`;
+
+  const canonicalUrl = `${appUrl}/r/${params.slug}`;
 
   return {
-    title: `${restaurant.name} — Menú | MENIUS`,
+    title,
     description,
+    alternates: {
+      canonical: canonicalUrl,
+    },
     openGraph: {
-      title: `${restaurant.name} — Menú`,
+      type: 'website',
+      title: `${restaurant.name} — Menú Digital`,
+      description,
+      url: canonicalUrl,
+      siteName: 'MENIUS',
+      locale: 'es_MX',
+      ...(restaurant.cover_image_url ? {
+        images: [{
+          url: restaurant.cover_image_url,
+          width: 1200,
+          height: 630,
+          alt: `Menú de ${restaurant.name}`,
+        }],
+      } : {}),
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${restaurant.name} — Menú Digital`,
       description,
       ...(restaurant.cover_image_url ? { images: [restaurant.cover_image_url] } : {}),
     },
@@ -98,15 +126,68 @@ export default async function PublicMenuPage({ params, searchParams }: PageProps
     name: categoryTransMap[c.id]?.name || c.name,
   }));
 
+  // Fetch review stats for structured data
+  const { data: reviews } = await supabase
+    .from('reviews')
+    .select('rating')
+    .eq('restaurant_id', restaurant.id)
+    .eq('is_visible', true);
+
+  const reviewCount = reviews?.length ?? 0;
+  const avgRating = reviewCount > 0
+    ? reviews!.reduce((s, r) => s + r.rating, 0) / reviewCount
+    : 0;
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://menius.vercel.app';
+
+  // Build category->products map for Menu JSON-LD
+  const menuCategories = mappedCategories.map(c => ({
+    name: c.name,
+    products: mappedProducts
+      .filter(p => p.category_id === c.id)
+      .map(p => ({ name: p.name, description: p.description, price: p.price, image_url: p.image_url })),
+  }));
+
   return (
-    <PublicMenuClient
-      restaurant={restaurant}
-      categories={mappedCategories}
-      products={mappedProducts}
-      tableName={searchParams.table ?? null}
-      currentLanguage={requestedLang}
-      supportedLanguages={supportedLangs}
-      reservationConfig={restaurant.reservation_config ?? null}
-    />
+    <>
+      <RestaurantJsonLd
+        name={restaurant.name}
+        slug={restaurant.slug}
+        description={restaurant.description || restaurant.tagline}
+        cuisineType={restaurant.cuisine_type}
+        address={restaurant.address}
+        phone={restaurant.phone}
+        email={restaurant.email}
+        website={restaurant.website}
+        logoUrl={restaurant.logo_url}
+        coverImageUrl={restaurant.cover_image_url}
+        operatingHours={restaurant.operating_hours}
+        averageRating={avgRating}
+        reviewCount={reviewCount}
+        appUrl={appUrl}
+      />
+      <MenuJsonLd
+        restaurantName={restaurant.name}
+        slug={restaurant.slug}
+        categories={menuCategories}
+        currency={restaurant.currency ?? 'MXN'}
+        appUrl={appUrl}
+      />
+      <BreadcrumbJsonLd
+        items={[
+          { name: 'MENIUS', url: appUrl },
+          { name: restaurant.name, url: `${appUrl}/r/${restaurant.slug}` },
+        ]}
+      />
+      <PublicMenuClient
+        restaurant={restaurant}
+        categories={mappedCategories}
+        products={mappedProducts}
+        tableName={searchParams.table ?? null}
+        currentLanguage={requestedLang}
+        supportedLanguages={supportedLangs}
+        reservationConfig={restaurant.reservation_config ?? null}
+      />
+    </>
   );
 }
