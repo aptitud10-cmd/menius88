@@ -11,10 +11,21 @@ import { useCartStore } from '@/store/cartStore';
 import { formatPrice, cn } from '@/lib/utils';
 import type { Restaurant, Category, Product, ProductVariant, ProductExtra, DaySchedule } from '@/types';
 
+interface ComboData {
+  id: string;
+  name: string;
+  description: string;
+  image_url: string;
+  original_price: number;
+  combo_price: number;
+  combo_items: { product: { id: string; name: string; price: number; image_url: string | null }; quantity: number }[];
+}
+
 interface PublicMenuClientProps {
   restaurant: Restaurant;
   categories: Category[];
   products: Product[];
+  combos?: ComboData[];
   tableName: string | null;
   currentLanguage?: string;
   supportedLanguages?: string[];
@@ -46,7 +57,7 @@ const LANG_FLAGS: Record<string, string> = {
   es: '🇲🇽', en: '🇺🇸', fr: '🇫🇷', de: '🇩🇪', pt: '🇧🇷', it: '🇮🇹', ja: '🇯🇵', zh: '🇨🇳', ko: '🇰🇷',
 };
 
-export function PublicMenuClient({ restaurant, categories, products, tableName, currentLanguage = 'es', supportedLanguages = ['es'], reservationConfig }: PublicMenuClientProps) {
+export function PublicMenuClient({ restaurant, categories, products, combos = [], tableName, currentLanguage = 'es', supportedLanguages = ['es'], reservationConfig }: PublicMenuClientProps) {
   const [activeCategory, setActiveCategory] = useState(categories[0]?.id ?? '');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showInfo, setShowInfo] = useState(false);
@@ -385,30 +396,81 @@ export function PublicMenuClient({ restaurant, categories, products, tableName, 
             <p className="text-sm mt-1 text-gray-300">Los productos aparecerán aquí cuando el restaurante los agregue</p>
           </div>
         ) : (
-          itemsByCategory.map(({ category, items }) =>
-            items.length > 0 ? (
-              <div
-                key={category.id}
-                id={category.id}
-                ref={(el) => { sectionRefs.current[category.id] = el; }}
-                className="mb-8"
-              >
+          <>
+            {/* Combos section */}
+            {combos.length > 0 && (
+              <div className="mb-8">
                 <h2 className="text-base font-bold text-gray-900 mb-3 flex items-center gap-2">
-                  {category.name}
-                  <span className="text-xs font-normal text-gray-400">{items.length}</span>
+                  🔥 Combos
+                  <span className="text-xs font-normal text-gray-400">{combos.length}</span>
                 </h2>
                 <div className="grid grid-cols-1 gap-2.5">
-                  {items.map((item) => (
-                    <ProductCard
-                      key={item.id}
-                      product={item}
-                      onSelect={() => setSelectedProduct(item)}
-                    />
-                  ))}
+                  {combos.map(combo => {
+                    const discount = combo.original_price > 0
+                      ? Math.round((combo.original_price - combo.combo_price) / combo.original_price * 100)
+                      : 0;
+                    return (
+                      <div key={combo.id}
+                        className="flex items-stretch gap-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/60 rounded-2xl p-3 transition-all hover:shadow-md">
+                        {combo.image_url ? (
+                          <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 relative">
+                            <Image src={combo.image_url} alt={combo.name} fill className="object-cover" />
+                          </div>
+                        ) : (
+                          <div className="w-20 h-20 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+                            <span className="text-2xl">🍱</span>
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-sm font-bold text-gray-900 truncate">{combo.name}</h3>
+                            {discount > 0 && (
+                              <span className="text-[10px] font-bold bg-red-500 text-white px-1.5 py-0.5 rounded-full">-{discount}%</span>
+                            )}
+                          </div>
+                          {combo.description && <p className="text-xs text-gray-600 mt-0.5 line-clamp-1">{combo.description}</p>}
+                          <div className="text-[10px] text-gray-400 mt-1">
+                            {combo.combo_items.map((ci, i) => (
+                              <span key={i}>{i > 0 ? ' + ' : ''}{ci.quantity > 1 ? `${ci.quantity}x ` : ''}{ci.product?.name}</span>
+                            ))}
+                          </div>
+                          <div className="flex items-center gap-2 mt-1.5">
+                            <span className="text-xs text-gray-400 line-through">{formatPrice(combo.original_price)}</span>
+                            <span className="text-sm font-bold text-amber-700">{formatPrice(combo.combo_price)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
-            ) : null
-          )
+            )}
+
+            {itemsByCategory.map(({ category, items }) =>
+              items.length > 0 ? (
+                <div
+                  key={category.id}
+                  id={category.id}
+                  ref={(el) => { sectionRefs.current[category.id] = el; }}
+                  className="mb-8"
+                >
+                  <h2 className="text-base font-bold text-gray-900 mb-3 flex items-center gap-2">
+                    {category.name}
+                    <span className="text-xs font-normal text-gray-400">{items.length}</span>
+                  </h2>
+                  <div className="grid grid-cols-1 gap-2.5">
+                    {items.map((item) => (
+                      <ProductCard
+                        key={item.id}
+                        product={item}
+                        onSelect={() => setSelectedProduct(item)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : null
+            )}
+          </>
         )}
       </div>
 
@@ -803,6 +865,15 @@ function InfoModal({ restaurant, status, onClose }: { restaurant: Restaurant; st
             </div>
           </div>
         )}
+
+        {/* Customer portal link */}
+        <a
+          href={`/r/${restaurant.slug}/mi-cuenta`}
+          className="mt-5 flex items-center gap-2 px-4 py-2.5 bg-gray-50 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors w-full justify-center"
+        >
+          <Star className="w-4 h-4 text-amber-500" />
+          Mi cuenta — Pedidos y puntos
+        </a>
       </div>
     </div>
   );

@@ -72,7 +72,7 @@ export default async function PublicMenuPage({ params, searchParams }: PageProps
 
   if (!restaurant) notFound();
 
-  const [{ data: categories }, { data: products }] = await Promise.all([
+  const [{ data: categories }, { data: products }, { data: combos }] = await Promise.all([
     supabase
       .from('categories')
       .select('*')
@@ -82,6 +82,12 @@ export default async function PublicMenuPage({ params, searchParams }: PageProps
     supabase
       .from('products')
       .select('*, product_variants(*), product_extras(*)')
+      .eq('restaurant_id', restaurant.id)
+      .eq('is_active', true)
+      .order('sort_order'),
+    supabase
+      .from('combos')
+      .select('*, combo_items(*, product:products(id, name, price, image_url))')
       .eq('restaurant_id', restaurant.id)
       .eq('is_active', true)
       .order('sort_order'),
@@ -183,6 +189,7 @@ export default async function PublicMenuPage({ params, searchParams }: PageProps
         restaurant={restaurant}
         categories={mappedCategories}
         products={mappedProducts}
+        combos={combos ?? []}
         tableName={searchParams.table ?? null}
         currentLanguage={requestedLang}
         supportedLanguages={supportedLangs}

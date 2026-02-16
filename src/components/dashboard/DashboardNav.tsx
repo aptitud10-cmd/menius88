@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, ClipboardList, Tag, ShoppingBag, QrCode, Settings, LogOut, Menu, X, ExternalLink, BarChart3, Users, Percent, Star, CreditCard, ChefHat, Globe, Boxes, Palette, Heart, CalendarDays, Truck, UserCheck, ListOrdered, Receipt, Moon, Sun, Shield } from 'lucide-react';
+import { LayoutDashboard, ClipboardList, Tag, ShoppingBag, QrCode, Settings, LogOut, Menu, X, ExternalLink, BarChart3, Users, Percent, Star, CreditCard, ChefHat, Globe, Boxes, Palette, Heart, CalendarDays, Truck, UserCheck, ListOrdered, Receipt, Moon, Sun, Shield, Gift, Package } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { logout } from '@/lib/actions/auth';
@@ -28,6 +28,8 @@ const NAV_ITEMS = [
   { href: '/app/delivery-zones', label: 'Zonas Delivery', icon: Truck },
   { href: '/app/theme', label: 'Tema', icon: Palette },
   { href: '/app/loyalty', label: 'Lealtad', icon: Heart },
+  { href: '/app/gift-cards', label: 'Gift Cards', icon: Gift },
+  { href: '/app/combos', label: 'Combos', icon: Package },
   { href: '/app/billing', label: 'Facturación', icon: CreditCard },
   { href: '/app/audit', label: 'Auditoría', icon: Shield },
   { href: '/app/settings', label: 'Configuración', icon: Settings },
