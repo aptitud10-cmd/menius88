@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { DashboardNav } from '@/components/dashboard/DashboardNav';
 import { TrialBanner } from '@/components/dashboard/TrialBanner';
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
+import { RestaurantSwitcher } from '@/components/dashboard/RestaurantSwitcher';
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = createClient();
@@ -33,7 +34,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <Link href="/app" className="text-lg font-bold tracking-tight mb-1" style={{ fontFamily: "'Sora', sans-serif" }}>
             <span className="text-brand-600">MEN</span><span className="dark:text-white">IUS</span>
           </Link>
-          <p className="text-xs text-gray-400 mb-6 truncate">{restaurant?.name ?? 'Mi Restaurante'}</p>
+          <div className="mb-4">
+            <RestaurantSwitcher
+              currentName={restaurant?.name ?? 'Mi Restaurante'}
+              currentId={profile.default_restaurant_id}
+            />
+          </div>
 
           <DashboardNav slug={restaurant?.slug ?? ''} />
 

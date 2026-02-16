@@ -3,6 +3,7 @@ export {
   sendOrderReady,
   sendOrderStatusUpdate,
   sendNewOrderAlert,
+  sendStaffInvitation,
 } from './email-service';
 
 export {

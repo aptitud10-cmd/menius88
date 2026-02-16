@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { getTenantContext } from '@/lib/tenant';
+import { sendStaffInvitation } from '@/lib/notifications';
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
@@ -85,8 +86,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // TODO: Send invitation email using notification service
-    // await sendStaffInvitation({ to: email, token: invitation.token, ... });
+    // Fetch restaurant name for the email
+    const { data: restaurant } = await supabase
+      .from('restaurants')
+      .select('name')
+      .eq('id', tenant.restaurantId)
+      .single();
+
+    // Send invitation email (fire-and-forget)
+    sendStaffInvitation({
+      to: email.toLowerCase(),
+      restaurantName: restaurant?.name ?? 'Restaurante',
+      role: role ?? 'staff',
+      invitedBy: tenant.userEmail,
+    });
 
     return NextResponse.json({ invitation });
   } catch (err: any) {

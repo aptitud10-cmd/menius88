@@ -131,12 +131,20 @@ export interface ProductExtra {
   sort_order: number;
 }
 
+export type TableStatus = 'available' | 'occupied' | 'reserved' | 'cleaning';
+
 export interface Table {
   id: string;
   restaurant_id: string;
   name: string;
   qr_code_value: string;
   is_active: boolean;
+  status?: TableStatus;
+  current_order_id?: string | null;
+  assigned_server?: string;
+  status_changed_at?: string;
+  capacity?: number;
+  section?: string;
   created_at: string;
 }
 
